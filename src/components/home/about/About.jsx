@@ -300,7 +300,7 @@ const AboutPage = () => {
                                         <img
                                             src={skill.logo}
                                             alt={skill.name}
-                                            className="w-12 h-12 object-contain grayscale group-hover:grayscale-0 transition-all"
+                                            className="w-12 h-12 object-contain group-hover: transition-all"
                                         />
                                     ) : (
                                         <div className="w-12 h-12 flex items-center justify-center bg-white/5 rounded-full font-bold text-green-500">
@@ -336,7 +336,7 @@ const AboutPage = () => {
                                         {cert.logo && (
                                             <img
                                                 src={cert.logo}
-                                                className="w-12 h-12 object-contain grayscale group-hover:grayscale-0"
+                                                className="w-12 h-12 object-contain"
                                                 alt=""
                                             />
                                         )}
