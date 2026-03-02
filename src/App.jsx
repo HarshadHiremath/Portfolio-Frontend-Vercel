@@ -55,6 +55,43 @@ const App = () => {
     }, 5000);
   }, []);
 
+  useEffect(() => {
+
+    // Disable Right Click
+    const handleContextMenu = (e) => {
+      e.preventDefault();
+    };
+
+    // Disable Zoom (Ctrl + Scroll)
+    const handleWheel = (e) => {
+      if (e.ctrlKey) {
+        e.preventDefault();
+      }
+    };
+
+    // Disable DevTools & Zoom Keys
+    const handleKeyDown = (e) => {
+      if (
+        e.key === "F12" ||
+        (e.ctrlKey && e.shiftKey && (e.key === "I" || e.key === "J")) ||
+        (e.ctrlKey && (e.key === "U" || e.key === "+" || e.key === "-" || e.key === "="))
+      ) {
+        e.preventDefault();
+      }
+    };
+
+    document.addEventListener("contextmenu", handleContextMenu);
+    document.addEventListener("wheel", handleWheel, { passive: false });
+    document.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      document.removeEventListener("contextmenu", handleContextMenu);
+      document.removeEventListener("wheel", handleWheel);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+
+  }, []);
+
   return (
     <div>
       {IsLoading && isHome? (
