@@ -110,7 +110,7 @@ const App = () => {
             <Route path="/blog/:id" element={<Post />} />
           </Route>
           <Route element={<BlogLayout />}>
-            <Route path="/admin" element={<Admin />} />
+            <Route path="/adminn" element={<Admin />} />
             
           </Route>
         </Routes>
