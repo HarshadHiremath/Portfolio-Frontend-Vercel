@@ -1,356 +1,274 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { motion } from 'framer-motion';
-import HomeFormModal from './HomeFormModal';
+import React, { useEffect, useState } from "react";
+import { Loader2, Plus, Trash2, Edit3, ShieldAlert, Terminal } from "lucide-react";
+
+const API = import.meta.env.VITE_LOCALHOST ? `${import.meta.env.VITE_LOCALHOST}/api/home` : "http://localhost:3500/api/home";
 
 const AdminHome = () => {
-  const [journeyStats, setJourneyStats] = useState([]);
-  const [notices, setNotices] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-  const [successMessage, setSuccessMessage] = useState('');
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editEntry, setEditEntry] = useState(null);
-  const [currentSection, setCurrentSection] = useState('');
+    const token = localStorage.getItem("token");
 
-  // Fetch all data
-  const fetchData = useCallback(async (signal) => {
-    try {
-      setLoading(true);
-      setError('');
-      const apiUrl = import.meta.env.VITE_LOCALHOST || 'http://localhost:3500';
-      const sections = ['journey', 'notices'];
+    const [devLogs, setDevLogs] = useState([]);
+    const [notices, setNotices] = useState([]);
+    const [isLoading, setIsLoading] = useState(false);
+    const [actionLoading, setActionLoading] = useState(false);
 
-      const promises = sections.map(async (section) => {
-        const response = await fetch(`${apiUrl}/${section}`, { signal });
-        if (!response.ok) {
-          throw new Error(`Failed to fetch ${section}: ${response.statusText}`);
+    const [modal, setModal] = useState(false);
+    const [type, setType] = useState("");
+    const [editId, setEditId] = useState(null);
+
+    const [form, setForm] = useState({
+        title: "",
+        value: "",
+        description: "",
+        content: "",
+        date: "",
+    });
+
+    const headers = {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+    };
+
+    const fetchData = async () => {
+        setIsLoading(true);
+        try {
+            const [devRes, noticeRes] = await Promise.all([
+                fetch(`${API}/devLog`, { headers: { Authorization: `Bearer ${token}` } }),
+                fetch(`${API}/notices`, { headers: { Authorization: `Bearer ${token}` } })
+            ]);
+
+            const devData = await devRes.json();
+            const noticeData = await noticeRes.json();
+
+            setDevLogs(devData.data || devData);
+            setNotices(noticeData.data || noticeData);
+        } catch (err) {
+            console.error("Fetch error:", err);
+        } finally {
+            setIsLoading(false);
         }
-        const data = await response.json();
-        return { section, data: Array.isArray(data) ? data : [] };
-      });
+    };
 
-      const results = await Promise.all(promises);
-      const newData = results.reduce((acc, { section, data }) => {
-        acc[section] = data;
-        return acc;
-      }, { journey: [], notices: [] });
-      setJourneyStats(newData.journey);
-      setNotices(newData.notices);
-    } catch (err) {
-      if (err.name === 'AbortError') return;
-      setError(err.message || 'An unexpected error occurred');
-    } finally {
-      if (!signal.aborted) {
-        setLoading(false);
-      }
-    }
-  }, []);
+    useEffect(() => {
+        fetchData();
+    }, []);
 
-  useEffect(() => {
-    const controller = new AbortController();
-    fetchData(controller.signal);
-    return () => controller.abort();
-  }, [fetchData]);
+    const openModal = (section, data = null) => {
+        setType(section);
+        setEditId(data?._id || null);
+        setForm(data || { title: "", value: "", description: "", content: "", date: "" });
+        setModal(true);
+    };
 
-  // Handle add/edit submission
-  const handleSubmit = async (formData, sectionType) => {
-    if (!formData.title?.trim() || (sectionType === 'journey' && !formData.value?.trim())) {
-      setError('Title and value (for journey) are required');
-      setTimeout(() => setError(''), 3000);
-      return false;
-    }
+    const save = async () => {
+        setActionLoading(true);
+        try {
+            let url = `${API}/${type}`;
+            let method = "POST";
 
-    try {
-      const apiUrl = import.meta.env.VITE_LOCALHOST || 'http://localhost:3500';
-      const isEditMode = !!formData._id;
-      const url = isEditMode ? `${apiUrl}/${sectionType}/${formData._id}` : `${apiUrl}/${sectionType}`;
-      const method = isEditMode ? 'PATCH' : 'POST';
+            if (editId) {
+                url = `${API}/${type}/${editId}`;
+                method = type === "devLog" ? "PUT" : "PATCH";
+            }
 
-      const response = await fetch(url, {
-        method,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
-      });
-
-      if (!response.ok) {
-        throw new Error(`Failed to ${isEditMode ? 'update' : 'create'} ${sectionType}: ${response.statusText}`);
-      }
-
-      const updatedEntry = await response.json();
-      if (sectionType === 'journey') {
-        setJourneyStats((prev) =>
-          isEditMode
-            ? prev.map((entry) => (entry._id === updatedEntry._id ? updatedEntry : entry))
-            : [...prev, updatedEntry]
-        );
-      } else {
-        setNotices((prev) =>
-          isEditMode
-            ? prev.map((entry) => (entry._id === updatedEntry._id ? updatedEntry : entry))
-            : [...prev, updatedEntry]
-        );
-      }
-      setSuccessMessage(`${sectionType.charAt(0).toUpperCase() + sectionType.slice(1)} ${isEditMode ? 'updated' : 'created'} successfully!`);
-      setTimeout(() => setSuccessMessage(''), 3000);
-      return true;
-    } catch (err) {
-      setError(err.message || 'An unexpected error occurred');
-      setTimeout(() => setError(''), 3000);
-      return false;
-    }
-  };
-
-  // Handle deletion
-  const handleDelete = async (entryId, sectionType) => {
-    if (window.confirm(`Are you sure you want to delete this ${sectionType} entry?`)) {
-      try {
-        const apiUrl = import.meta.env.VITE_LOCALHOST || 'http://localhost:3500';
-        const response = await fetch(`${apiUrl}/${sectionType}/${entryId}`, {
-          method: 'DELETE',
-        });
-        if (!response.ok) {
-          throw new Error(`Failed to delete ${sectionType}: ${response.statusText}`);
+            await fetch(url, {
+                method,
+                headers,
+                body: JSON.stringify(form),
+            });
+            setModal(false);
+            fetchData();
+        } catch (err) {
+            console.error(err);
+        } finally {
+            setActionLoading(false);
         }
-        if (sectionType === 'journey') {
-          setJourneyStats((prev) => prev.filter((entry) => entry._id !== entryId));
-        } else {
-          setNotices((prev) => prev.filter((entry) => entry._id !== entryId));
+    };
+
+    const remove = async (id, section) => {
+        if (!window.confirm("Terminate this record?")) return;
+        setActionLoading(true);
+        try {
+            await fetch(`${API}/${section}/${id}`, {
+                method: "DELETE",
+                headers: { Authorization: `Bearer ${token}` },
+            });
+            fetchData();
+        } catch (err) {
+            console.error(err);
+        } finally {
+            setActionLoading(false);
         }
-        setSuccessMessage(`${sectionType.charAt(0).toUpperCase() + sectionType.slice(1)} deleted successfully!`);
-        setTimeout(() => setSuccessMessage(''), 3000);
-        return true;
-      } catch (err) {
-        setError(err.message || 'An unexpected error occurred');
-        setTimeout(() => setError(''), 3000);
-        return false;
-      }
-    }
-    return false;
-  };
+    };
 
-  // Open modal
-  const openModal = (sectionType, entry = null) => {
-    setCurrentSection(sectionType);
-    setEditEntry(entry);
-    setIsModalOpen(true);
-  };
-
-  if (loading) {
     return (
-      <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4">
-        <p className="text-gray-500 text-lg">Loading data...</p>
-      </div>
+        <div className="min-h-screen bg-[#050505] text-gray-300 font-mono p-4 md:p-10 selection:bg-green-500/30">
+            {/* Header Section */}
+            <header className="max-w-7xl mx-auto mb-12 border-b border-green-900/50 pb-6 flex flex-col md:flex-row justify-between items-center gap-4">
+                <div className="flex items-center gap-3">
+                    <Terminal className="text-green-500 w-8 h-8 animate-pulse" />
+                    <h1 className="text-3xl font-black tracking-tighter text-white uppercase">
+                        System<span className="text-green-500">_Admin</span>
+                    </h1>
+                </div>
+                {isLoading && <Loader2 className="animate-spin text-green-500" />}
+            </header>
+
+            <main className="max-w-7xl mx-auto space-y-16">
+                {/* DEV LOG SECTION */}
+                <section>
+                    <div className="flex justify-between items-end mb-6">
+                        <div>
+                            <h2 className="text-green-500 text-xs font-bold uppercase tracking-[0.2em]">Deployment Status</h2>
+                            <p className="text-2xl font-bold text-white">Dev Journey Metrics</p>
+                        </div>
+                        <button 
+                            onClick={() => openModal("devLog")}
+                            className="group flex items-center gap-2 bg-green-600/10 border border-green-500/50 text-green-500 px-4 py-2 rounded hover:bg-green-500 hover:text-black transition-all duration-300 shadow-[0_0_15px_rgba(34,197,94,0.1)]"
+                        >
+                            <Plus size={18} /> New Stat
+                        </button>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {devLogs.map((item) => (
+                            <div key={item._id} className="group relative bg-[#0a0a0a] border border-white/10 p-6 rounded-lg hover:border-green-500/50 transition-all">
+                                <div className="absolute top-0 right-0 p-2 opacity-0 group-hover:opacity-100 transition-opacity flex gap-2">
+                                    <button onClick={() => openModal("devLog", item)} className="p-1 hover:text-blue-400"><Edit3 size={16}/></button>
+                                    <button onClick={() => remove(item._id, "devLog")} className="p-1 hover:text-red-500"><Trash2 size={16}/></button>
+                                </div>
+                                <h3 className="text-gray-500 text-xs uppercase mb-1 tracking-widest">{item.title}</h3>
+                                <div className="text-3xl font-bold text-green-400 mb-2 drop-shadow-[0_0_8px_rgba(74,222,128,0.3)]">{item.value}</div>
+                                <p className="text-sm text-gray-400 line-clamp-2">{item.description}</p>
+                            </div>
+                        ))}
+                    </div>
+                </section>
+
+                {/* NOTICES SECTION */}
+                <section>
+                    <div className="flex justify-between items-end mb-6">
+                        <div>
+                            <h2 className="text-red-500 text-xs font-bold uppercase tracking-[0.2em]">Global Communications</h2>
+                            <p className="text-2xl font-bold text-white">Notice Board</p>
+                        </div>
+                        <button 
+                            onClick={() => openModal("notices")}
+                            className="flex items-center gap-2 bg-red-600/10 border border-red-500/50 text-red-500 px-4 py-2 rounded hover:bg-red-500 hover:text-black transition-all duration-300"
+                        >
+                            <ShieldAlert size={18} /> Push Notice
+                        </button>
+                    </div>
+
+                    <div className="space-y-4">
+                        {notices.map((n) => (
+                            <div key={n._id} className="flex flex-col md:flex-row md:items-center justify-between bg-[#0a0a0a] border-l-4 border-red-600 p-5 rounded-r-lg hover:bg-white/5 transition-colors">
+                                <div className="flex-1">
+                                    <div className="flex items-center gap-3 mb-1">
+                                        <h3 className="font-bold text-white text-lg">{n.title}</h3>
+                                        <span className="text-[10px] bg-red-900/30 text-red-400 px-2 py-0.5 rounded border border-red-800">{n.date}</span>
+                                    </div>
+                                    <p className="text-gray-400 text-sm max-w-3xl">{n.content}</p>
+                                </div>
+                                <div className="flex gap-4 mt-4 md:mt-0">
+                                    <button onClick={() => openModal("notices", n)} className="text-gray-500 hover:text-blue-400 transition-colors"><Edit3 size={20}/></button>
+                                    <button onClick={() => remove(n._id, "notices")} className="text-gray-500 hover:text-red-500 transition-colors"><Trash2 size={20}/></button>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </section>
+            </main>
+
+            {/* MODAL */}
+            {modal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+                    <div className="absolute inset-0 bg-black/90 backdrop-blur-sm" onClick={() => !actionLoading && setModal(false)} />
+                    <div className="relative bg-[#0d0d0d] border border-green-500/50 p-8 rounded-xl w-full max-w-md shadow-[0_0_50px_rgba(0,0,0,1)]">
+                        <div className="flex items-center gap-2 mb-6">
+                            <div className="w-2 h-2 bg-green-500 rounded-full animate-ping" />
+                            <h3 className="font-bold text-xl text-white uppercase tracking-tighter">
+                                {editId ? "Update" : "Initialize"} {type}
+                            </h3>
+                        </div>
+
+                        <div className="space-y-4">
+                            <div className="space-y-1">
+                                <label className="text-[10px] text-green-500 uppercase font-bold">Entry Title</label>
+                                <input
+                                    placeholder="Enter identifier..."
+                                    value={form.title}
+                                    onChange={(e) => setForm({ ...form, title: e.target.value })}
+                                    className="w-full p-3 bg-black border border-white/10 rounded focus:border-green-500 outline-none transition-colors text-white"
+                                />
+                            </div>
+
+                            {type === "devLog" ? (
+                                <>
+                                    <div className="space-y-1">
+                                        <label className="text-[10px] text-green-500 uppercase font-bold">Metric Value</label>
+                                        <input
+                                            placeholder="e.g. 99.9% or 500+"
+                                            value={form.value}
+                                            onChange={(e) => setForm({ ...form, value: e.target.value })}
+                                            className="w-full p-3 bg-black border border-white/10 rounded focus:border-green-500 outline-none text-white"
+                                        />
+                                    </div>
+                                    <div className="space-y-1">
+                                        <label className="text-[10px] text-green-500 uppercase font-bold">Brief Description</label>
+                                        <input
+                                            placeholder="Describe the stat..."
+                                            value={form.description}
+                                            onChange={(e) => setForm({ ...form, description: e.target.value })}
+                                            className="w-full p-3 bg-black border border-white/10 rounded focus:border-green-500 outline-none text-white"
+                                        />
+                                    </div>
+                                </>
+                            ) : (
+                                <>
+                                    <div className="space-y-1">
+                                        <label className="text-[10px] text-red-500 uppercase font-bold">Content Body</label>
+                                        <textarea
+                                            placeholder="Message payload..."
+                                            rows={4}
+                                            value={form.content}
+                                            onChange={(e) => setForm({ ...form, content: e.target.value })}
+                                            className="w-full p-3 bg-black border border-white/10 rounded focus:border-red-500 outline-none text-white resize-none"
+                                        />
+                                    </div>
+                                    <div className="space-y-1">
+                                        <label className="text-[10px] text-red-500 uppercase font-bold">Timestamp</label>
+                                        <input
+                                            type="date"
+                                            value={form.date}
+                                            onChange={(e) => setForm({ ...form, date: e.target.value })}
+                                            className="w-full p-3 bg-black border border-white/10 rounded focus:border-red-500 outline-none text-white color-scheme-dark"
+                                        />
+                                    </div>
+                                </>
+                            )}
+                        </div>
+
+                        <div className="flex gap-4 mt-8">
+                            <button
+                                disabled={actionLoading}
+                                onClick={() => setModal(false)}
+                                className="flex-1 py-3 border border-white/10 rounded text-gray-400 hover:bg-white/5 transition-colors disabled:opacity-50"
+                            >
+                                Abort
+                            </button>
+                            <button
+                                disabled={actionLoading}
+                                onClick={save}
+                                className="flex-1 py-3 bg-green-600 text-black font-bold rounded hover:bg-green-400 transition-colors flex items-center justify-center gap-2 disabled:opacity-70"
+                            >
+                                {actionLoading ? <Loader2 className="animate-spin w-5 h-5" /> : "Execute"}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+        </div>
     );
-  }
-
-  return (
-    <div className="min-h-screen bg-gray-100 py-8 px-4 sm:px-6 lg:px-8 flex justify-center">
-      <div className="max-w-4xl w-full">
-        <motion.h1
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-          className="text-3xl font-bold text-gray-900 mb-6 text-center"
-        >
-          Manage Home Page
-        </motion.h1>
-        {error && (
-          <p className="text-red-500 text-center mb-4" role="alert" aria-live="assertive">
-            {error}
-          </p>
-        )}
-        {successMessage && (
-          <p className="text-green-500 text-center mb-4" role="alert" aria-live="assertive">
-            {successMessage}
-          </p>
-        )}
-
-        {/* My Journey Section */}
-        <motion.section
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.5 }}
-          className="mb-8 bg-white p-6 rounded-lg shadow-sm"
-        >
-          <div className="flex justify-between items-center mb-6">
-            <h2 className="text-xl font-semibold text-gray-900">My Journey</h2>
-            <button
-              onClick={() => openModal('journey')}
-              className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 text-sm sm:text-base transition-colors"
-            >
-              Add Stat
-            </button>
-          </div>
-          <div className="space-y-4">
-            {journeyStats.length === 0 ? (
-              <p className="text-gray-600 text-center">No journey stats available. Add one to get started!</p>
-            ) : (
-              journeyStats.map((stat) => (
-                <motion.div
-                  key={stat._id}
-                  className="bg-white border-l-4 border-blue-500 rounded-lg p-4 shadow-sm hover:shadow-md hover:scale-[1.02] transition-all duration-200"
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.3 }}
-                >
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between">
-                    <div className="mb-4 sm:mb-0">
-                      <h3 className="text-lg font-semibold text-gray-900">{stat.title || 'Untitled'}</h3>
-                      <p className="text-2xl font-bold text-blue-500">{stat.value || 'N/A'}</p>
-                      <p className="text-sm text-gray-600">{stat.description || 'No description'}</p>
-                    </div>
-                    <div className="flex space-x-2">
-                      <button
-                        onClick={() => openModal('journey', stat)}
-                        className="flex items-center bg-blue-100 text-blue-700 px-3 py-1 rounded-lg hover:bg-blue-200 text-sm transition-colors"
-                        aria-label="Edit journey stat"
-                      >
-                        <svg
-                          className="w-4 h-4 mr-1"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                          xmlns="http://www.w3.org/2000/svg"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth="2"
-                            d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
-                          />
-                        </svg>
-                        Edit
-                      </button>
-                      <button
-                        onClick={() => handleDelete(stat._id, 'journey')}
-                        className="flex items-center bg-red-100 text-red-700 px-3 py-1 rounded-lg hover:bg-red-200 text-sm transition-colors"
-                        aria-label="Delete journey stat"
-                      >
-                        <svg
-                          className="w-4 h-4 mr-1"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                          xmlns="http://www.w3.org/2000/svg"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth="2"
-                            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5-4h4M9 7v12m6-12v12"
-                          />
-                        </svg>
-                        Delete
-                      </button>
-                    </div>
-                  </div>
-                </motion.div>
-              ))
-            )}
-          </div>
-        </motion.section>
-
-        {/* Notice Board Section */}
-        <motion.section
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.5 }}
-          className="mb-8 bg-white p-6 rounded-lg shadow-sm"
-        >
-          <div className="flex justify-between items-center mb-6">
-            <h2 className="text-xl font-semibold text-gray-900">Notice Board</h2>
-            <button
-              onClick={() => openModal('notices')}
-              className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 text-sm sm:text-base transition-colors"
-            >
-              Add Notice
-            </button>
-          </div>
-          <div className="space-y-4">
-            {notices.length === 0 ? (
-              <p className="text-gray-600 text-center">No notices available. Add one to get started!</p>
-            ) : (
-              notices.map((notice) => (
-                <motion.div
-                  key={notice._id}
-                  className="bg-white border-l-4 border-red-500 rounded-lg p-4 shadow-sm hover:shadow-md hover:scale-[1.02] transition-all duration-200"
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.3 }}
-                >
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between">
-                    <div className="mb-4 sm:mb-0">
-                      <h3 className="text-lg font-semibold text-gray-900">{notice.title || 'Untitled'}</h3>
-                      <p className="text-sm text-gray-600 line-clamp-2">{notice.content || 'No content'}</p>
-                      <p className="text-sm text-gray-500">{notice.date || 'No date'}</p>
-                    </div>
-                    <div className="flex space-x-2">
-                      <button
-                        onClick={() => openModal('notices', notice)}
-                        className="flex items-center bg-blue-100 text-blue-700 px-3 py-1 rounded-lg hover:bg-blue-200 text-sm transition-colors"
-                        aria-label="Edit notice"
-                      >
-                        <svg
-                          className="w-4 h-4 mr-1"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                          xmlns="http://www.w3.org/2000/svg"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth="2"
-                            d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
-                          />
-                        </svg>
-                        Edit
-                      </button>
-                      <button
-                        onClick={() => handleDelete(notice._id, 'notices')}
-                        className="flex items-center bg-red-100 text-red-700 px-3 py-1 rounded-lg hover:bg-red-200 text-sm transition-colors"
-                        aria-label="Delete notice"
-                      >
-                        <svg
-                          className="w-4 h-4 mr-1"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                          xmlns="http://www.w3.org/2000/svg"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth="2"
-                            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5-4h4M9 7v12m6-12v12"
-                          />
-                        </svg>
-                        Delete
-                      </button>
-                    </div>
-                  </div>
-                </motion.div>
-              ))
-            )}
-          </div>
-        </motion.section>
-
-        {isModalOpen && (
-          <HomeFormModal
-            entry={editEntry}
-            sectionType={currentSection}
-            onSubmit={handleSubmit}
-            onDelete={handleDelete}
-            onClose={() => {
-              setIsModalOpen(false);
-              setEditEntry(null);
-              setCurrentSection('');
-            }}
-          />
-        )}
-      </div>
-    </div>
-  );
 };
 
 export default AdminHome;

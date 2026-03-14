@@ -16,7 +16,7 @@ const SplashScreen = ({ onComplete }) => {
           clearInterval(timer);
           // Small delay at 100% so the user sees completion before moving on
           setTimeout(() => {
-            onComplete();
+            // onComplete();
           }, 600); 
           return 100;
         }

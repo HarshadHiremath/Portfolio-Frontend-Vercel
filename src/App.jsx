@@ -1,123 +1,110 @@
-import React, { useState, useEffect } from 'react';
-import { Routes, Route, Outlet, useLocation } from 'react-router-dom';
-import Navbar from './components/home/Navbar';
-import Footer from './components/home/Footer';
-import SplashScreen from './components/home/SplashScreen';
-import Home from './components/home/home';
-import Project from './components/home/project/Project';
-import CodeDev from './components/home/codeDev/CodeDev';
-import About from './components/home/about/About';
-import Blog from './components/home/blog/Blog';
-import Contact from './components/home/contact/Contact';
-import Admin from './components/admin/Admin';
+import { useState, useEffect } from "react";
+import { Routes, Route, Outlet, useLocation } from "react-router-dom";
 
-import Post from './components/home/blog/Post';
+import Navbar from "./components/home/Navbar";
+import Footer from "./components/home/Footer";
+import SplashScreen from "./components/home/SplashScreen";
 
-// Layout with Navbar and Footer
+import Home from "./components/home/home";
+import Project from "./components/home/project/Project";
+import CodeDev from "./components/home/codeDev/CodeDev";
+import About from "./components/home/about/About";
+import Blog from "./components/home/blog/Blog";
+import Contact from "./components/home/contact/Contact";
+import Post from "./components/home/blog/Post";
+
+import AdminLogin from "./components/admin/AdminLogin";
+import Admin from "./components/admin/AdminDashboard";
+import AdminLayout from "./components/admin/Admin";
+import ProtectedRoute from "./components/admin/ProtectedRoute";
+import AdminHome from "./components/admin/home/AdminHome";
+import AdminProject from "./components/admin/project/AdminProject";
+
+// Layout with Navbar + Footer
 const MainLayout = () => (
-  <div className="min-h-screen bg-gray-100 flex flex-col">
-    <Navbar />
-    <main className="flex-grow mt-16">
-      <Outlet />
-    </main>
-    <Footer />
-  </div>
+    <div className="min-h-screen bg-gray-100 flex flex-col">
+        <Navbar />
+        <main className="flex-grow mt-16">
+            <Outlet />
+        </main>
+        <Footer />
+    </div>
 );
 
-// Layout without Navbar or Footer
-const BlogLayout = () => (
-  <div className="min-h-screen bg-gray-100">
-    <Outlet />
-  </div>
+// Layout without Navbar
+const SimpleLayout = () => (
+    <div className="min-h-screen bg-gray-100">
+        <Outlet />
+    </div>
 );
 
-
+// Scroll to top
 const ScrollToTop = () => {
-  const { pathname } = useLocation();
+    const { pathname } = useLocation();
 
-  useEffect(() => {
-      window.scrollTo(0, 0); // Scroll to the top of the page
-  }, [pathname]);
+    useEffect(() => {
+        window.scrollTo(0, 0);
+    }, [pathname]);
 
-  return null;
+    return null;
 };
 
-
-
 const App = () => {
-  const [IsLoading, setIsLoading] = useState(true);
-  const [isHome, setIsHome] =useState(true);
-  const location = useLocation();
-  useEffect(() => {
-    setIsHome(location.pathname === '/')
-    setTimeout(() => {
-      setIsLoading(false);
-    }, 5000);
-  }, []);
+    const [isLoading, setIsLoading] = useState(true);
+    const [isHome, setIsHome] = useState(true);
+    const location = useLocation();
 
-  useEffect(() => {
+    useEffect(() => {
+        setIsHome(location.pathname === "/");
 
-    // Disable Right Click
-    const handleContextMenu = (e) => {
-      e.preventDefault();
-    };
+        setTimeout(() => {
+            setIsLoading(false);
+        }, 4000);
+    }, []);
 
-    // Disable Zoom (Ctrl + Scroll)
-    const handleWheel = (e) => {
-      if (e.ctrlKey) {
-        e.preventDefault();
-      }
-    };
+    return (
+        <div>
+            {isLoading && isHome ? (
+                <SplashScreen />
+            ) : (
+                <>
+                    <ScrollToTop />
 
-    // Disable DevTools & Zoom Keys
-    const handleKeyDown = (e) => {
-      if (
-        e.key === "F12" ||
-        (e.ctrlKey && e.shiftKey && (e.key === "I" || e.key === "J")) ||
-        (e.ctrlKey && (e.key === "U" || e.key === "+" || e.key === "-" || e.key === "="))
-      ) {
-        e.preventDefault();
-      }
-    };
+                    <Routes>
+                        {/* WEBSITE ROUTES */}
+                        <Route element={<MainLayout />}>
+                            <Route path="/" element={<Home />} />
+                            <Route path="/project" element={<Project />} />
+                            <Route path="/codedev" element={<CodeDev />} />
+                            <Route path="/about" element={<About />} />
+                            <Route path="/contact" element={<Contact />} />
+                            <Route path="/blog" element={<Blog />} />
+                            <Route path="/blog/:id" element={<Post />} />
+                        </Route>
 
-    document.addEventListener("contextmenu", handleContextMenu);
-    document.addEventListener("wheel", handleWheel, { passive: false });
-    document.addEventListener("keydown", handleKeyDown);
+                        {/* ADMIN LOGIN */}
+                        <Route element={<SimpleLayout />}>
+                            <Route
+                                path="/admin/login"
+                                element={<AdminLogin />}
+                            />
+                        </Route>
 
-    return () => {
-      document.removeEventListener("contextmenu", handleContextMenu);
-      document.removeEventListener("wheel", handleWheel);
-      document.removeEventListener("keydown", handleKeyDown);
-    };
-
-  }, []);
-
-  return (
-    <div>
-      {IsLoading && isHome? (
-        <SplashScreen />
-      ) : (
-        <>
-        <ScrollToTop />
-        <Routes>
-          <Route element={<MainLayout />}>
-            <Route path="/" element={<Home />} />
-            <Route path="/project" element={<Project />} />
-            <Route path="/codedev" element={<CodeDev />} />
-            <Route path="/about" element={<About />} />
-            <Route path="/contact" element={<Contact />} />
-            <Route path="/blog" element={<Blog />} />
-            <Route path="/blog/:id" element={<Post />} />
-          </Route>
-          <Route element={<BlogLayout />}>
-            <Route path="/adminn" element={<Admin />} />
-            
-          </Route>
-        </Routes>
-        </>
-      )}
-    </div>
-  );
+                        {/* PROTECTED ADMIN ROUTES */}
+                        <Route element={<ProtectedRoute />}>
+                            <Route path="/admin" element={<AdminLayout />}>
+                                <Route path="dashboard" element={<Admin />} />
+                                <Route path="home" element={<AdminHome />} />
+                                <Route path="project" element={<AdminProject />} />
+                                {/* <Route path="codeDev" element={<AdmincodeDev />} />
+                                <Route path="contact" element={<AdminContact />} /> */}
+                            </Route>
+                        </Route>
+                    </Routes>
+                </>
+            )}
+        </div>
+    );
 };
 
 export default App;

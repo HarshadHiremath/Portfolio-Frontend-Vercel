@@ -21,7 +21,7 @@ const Footer = () => {
         const fetchLinks = async () => {
             try {
                 const response = await fetch(
-                    `${import.meta.env.VITE_LOCALHOST}/link`,
+                    `${import.meta.env.VITE_LOCALHOST}/api/link`,
                 );
                 if (!response.ok) throw new Error(`Failed to fetch links`);
                 const data = await response.json();
@@ -182,7 +182,7 @@ const Footer = () => {
                         </span>
 
                         <a
-                            href="https://harshadhiremath.vercel.app/admin"
+                            href="https://harshadhiremath.vercel.app/admin/login"
                             target="_blank"
                             rel="noopener noreferrer"
                             className="text-[10px] font-bold text-green-400 uppercase tracking-tighter hover:text-green-300 transition-colors"

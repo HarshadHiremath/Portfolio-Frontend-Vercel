@@ -1,686 +1,225 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Loader2, Plus, Trash2, Edit3, Terminal, Cpu, Link, Github, Calendar, Quote, Image as ImageIcon } from 'lucide-react';
+
+const API = import.meta.env.VITE_LOCALHOST || 'http://localhost:3500';
 
 const AdminProjects = () => {
-  const [sections, setSections] = useState({
-    projects: [],
-    milestones: [],
-    marquees: [],
-    testimonials: [],
-  });
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-  const [modalOpen, setModalOpen] = useState(false);
-  const [currentSection, setCurrentSection] = useState('');
-  const [currentItem, setCurrentItem] = useState(null);
-  const [formData, setFormData] = useState({});
+    const token = localStorage.getItem("token");
+    const [sections, setSections] = useState({ projects: [], milestones: [], marquee: [], testimonials: [] });
+    const [loading, setLoading] = useState(true);
+    const [submitting, setSubmitting] = useState(false);
+    const [modalOpen, setModalOpen] = useState(false);
+    const [currentSection, setCurrentSection] = useState(''); 
+    const [currentItem, setCurrentItem] = useState(null);
+    const [formData, setFormData] = useState({});
 
-  // Fetch data from backend
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setLoading(true);
-        setError('');
-        const apiUrl = import.meta.env.VITE_LOCALHOST || 'http://localhost:3500';
-        const sectionTypes = ['projects', 'milestones', 'marquees', 'testimonials'];
-
-        const promises = sectionTypes.map(async (type) => {
-          const response = await fetch(`${apiUrl}/${type}`);
-          if (!response.ok) throw new Error(`Failed to fetch ${type}`);
-          const data = await response.json();
-          return { type, data: Array.isArray(data) ? data : [] };
-        });
-
-        const results = await Promise.all(promises);
-        const newSections = results.reduce((acc, { type, data }) => {
-          acc[type] = data;
-          return acc;
-        }, {});
-        setSections(newSections);
-      } catch (err) {
-        setError(err.message || 'Failed to fetch data');
-      } finally {
-        setLoading(false);
-      }
+    const config = {
+        projects: { color: 'text-blue-400', border: 'border-blue-500/30', label: 'Project' },
+        milestones: { color: 'text-green-400', border: 'border-green-500/30', label: 'Milestone' },
+        marquee: { color: 'text-purple-400', border: 'border-purple-500/30', label: 'Marquee' },
+        testimonials: { color: 'text-yellow-400', border: 'border-yellow-500/30', label: 'Testimonial' },
     };
-    fetchData();
-  }, []);
 
-  // Handle form submission (add or update)
-  const handleSubmit = async (e, sectionType) => {
-    e.preventDefault();
-    try {
-      const apiUrl = import.meta.env.VITE_LOCALHOST || 'http://localhost:3500';
-      const method = currentItem ? 'PATCH' : 'POST';
-      const url = currentItem
-        ? `${apiUrl}/${sectionType}/${currentItem._id}`
-        : `${apiUrl}/${sectionType}`;
+    const fetchData = async () => {
+        try {
+            setLoading(true);
+            const types = ['projects', 'milestones', 'marquee', 'testimonials'];
+            const promises = types.map(type => 
+                fetch(`${API}/api/project/${type}`, { headers: { Authorization: `Bearer ${token}` } }).then(res => res.json())
+            );
+            const results = await Promise.all(promises);
+            const newState = {};
+            types.forEach((type, index) => {
+                newState[type] = Array.isArray(results[index]) ? results[index] : (results[index].data || []);
+            });
+            setSections(newState);
+        } catch (err) { console.error("Fetch Error:", err); }
+        finally { setLoading(false); }
+    };
 
-      const body = { ...formData };
-      if (sectionType === 'projects' && formData.techStack) {
-        body.techStack = formData.techStack.split(',').map((tech) => tech.trim());
-      }
+    useEffect(() => { fetchData(); }, []);
 
-      const response = await fetch(url, {
-        method,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
-      });
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        setSubmitting(true);
+        try {
+            const method = currentItem ? 'PATCH' : 'POST';
+            const url = currentItem 
+                ? `${API}/api/project/${currentSection}/${currentItem._id}` 
+                : `${API}/api/project/${currentSection}`;
 
-      if (!response.ok) throw new Error(`Failed to ${currentItem ? 'update' : 'add'} ${sectionType}`);
-      const updatedItem = await response.json();
+            const payload = { ...formData };
+            if (currentSection === 'projects' && typeof payload.techStack === 'string') {
+                payload.techStack = payload.techStack.split(',').map(s => s.trim());
+            }
 
-      setSections((prev) => ({
-        ...prev,
-        [sectionType]: currentItem
-          ? prev[sectionType].map((item) =>
-              item._id === updatedItem._id ? updatedItem : item
-            )
-          : [...prev[sectionType], updatedItem],
-      }));
+            const res = await fetch(url, {
+                method,
+                headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+                body: JSON.stringify(payload)
+            });
 
-      setModalOpen(false);
-      setFormData({});
-      setCurrentItem(null);
-    } catch (err) {
-      setError(err.message);
-    }
-  };
+            if (res.ok) { setModalOpen(false); fetchData(); }
+        } catch (err) { console.error("Save Error:", err); }
+        finally { setSubmitting(false); }
+    };
 
-  // Handle delete
-  const handleDelete = async (sectionType, id) => {
-    if (!window.confirm(`Are you sure you want to delete this ${sectionType.slice(0, -1)}?`)) return;
-    try {
-      const apiUrl = import.meta.env.VITE_LOCALHOST || 'http://localhost:3500';
-      const response = await fetch(`${apiUrl}/${sectionType}/${id}`, {
-        method: 'DELETE',
-      });
+    const handleDelete = async (section, id) => {
+        if (!window.confirm(`Terminate ${section.slice(0, -1)} entry?`)) return;
+        try {
+            const res = await fetch(`${API}/api/project/${section}/${id}`, {
+                method: 'DELETE',
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            if (res.ok) fetchData();
+        } catch (err) { console.error("Delete Error:", err); }
+    };
 
-      if (!response.ok) throw new Error(`Failed to delete ${sectionType}`);
-      setSections((prev) => ({
-        ...prev,
-        [sectionType]: prev[sectionType].filter((item) => item._id !== id),
-      }));
-    } catch (err) {
-      setError(err.message);
-    }
-  };
+    const openModal = (section, item = null) => {
+        setCurrentSection(section);
+        setCurrentItem(item);
+        setFormData(item ? { 
+            ...item, 
+            techStack: Array.isArray(item.techStack) ? item.techStack.join(', ') : item.techStack 
+        } : {});
+        setModalOpen(true);
+    };
 
-  // Open modal for add/edit
-  const openModal = (sectionType, item = null) => {
-    setCurrentSection(sectionType);
-    setCurrentItem(item);
-    setFormData(
-      item
-        ? { ...item, techStack: item.techStack ? item.techStack.join(', ') : '' }
-        : {
-            title: '',
-            description: '',
-            image: '',
-            techStack: '',
-            liveLink: '',
-            githubLink: '',
-            date: '',
-            text: '',
-            quote: '',
-            source: '',
-          }
-    );
-    setModalOpen(true);
-  };
+    if (loading) return <div className="min-h-screen bg-[#050505] flex items-center justify-center font-mono text-green-500 animate-pulse">SYNCING_ASSETS...</div>;
 
-  // Handle form input changes
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-  };
-
-  if (loading) {
     return (
-      <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4">
-        <p className="text-gray-500 text-lg">Loading...</p>
-      </div>
+        <div className="min-h-screen bg-[#050505] text-gray-300 font-mono p-4 md:p-8">
+            <header className="max-w-6xl mx-auto mb-12 flex items-center gap-3 border-b border-white/5 pb-6">
+                <Cpu className="text-green-500" />
+                <h1 className="text-2xl font-black uppercase text-white tracking-tighter">Asset<span className="text-green-500">_Manager</span></h1>
+            </header>
+
+            <main className="max-w-6xl mx-auto space-y-16">
+                {Object.keys(config).map((key) => (
+                    <section key={key}>
+                        <div className="flex justify-between items-end mb-6 border-l-2 border-green-500 pl-4">
+                            <div>
+                                <h2 className={`text-[10px] font-bold uppercase tracking-[0.4em] ${config[key].color}`}>Storage_{key}</h2>
+                                <p className="text-xl text-white font-bold uppercase tracking-tight">{key}</p>
+                            </div>
+                            <button 
+                                onClick={() => openModal(key)}
+                                className="flex items-center gap-2 bg-white/5 border border-white/10 px-4 py-2 text-xs font-bold hover:bg-green-500 hover:text-black transition-all"
+                            >
+                                <Plus size={14} /> NEW_ENTRY
+                            </button>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {sections[key].map((item) => (
+                                <div key={item._id} className={`group bg-[#0a0a0a] border ${config[key].border} rounded flex overflow-hidden hover:bg-white/[0.02] transition-all`}>
+                                    
+                                    {/* PROJECT IMAGE PREVIEW */}
+                                    {key === 'projects' && (
+                                        <div className="w-24 sm:w-32 bg-black flex-shrink-0 border-r border-white/5 relative flex items-center justify-center">
+                                            {item.image ? (
+                                                <img src={item.image} alt="prev" className="w-full h-full object-cover opacity-50 group-hover:opacity-100 transition-opacity" />
+                                            ) : (
+                                                <ImageIcon className="text-gray-800" size={24} />
+                                            )}
+                                        </div>
+                                    )}
+
+                                    <div className="p-4 flex-1 min-w-0">
+                                        <div className="flex justify-between items-start">
+                                            <h3 className="text-white font-bold text-sm uppercase truncate mb-1">
+                                                {item.title || item.text || item.quote}
+                                            </h3>
+                                        </div>
+                                        <p className="text-[11px] text-gray-500 line-clamp-2 mb-3 leading-relaxed">
+                                            {item.description || item.source || 'No metadata available.'}
+                                        </p>
+                                        
+                                        {/* ACTION BUTTONS (LARGER) */}
+                                        <div className="flex gap-4 border-t border-white/5 pt-3 mt-auto">
+                                            <button 
+                                                onClick={() => openModal(key, item)} 
+                                                className="text-blue-400 hover:text-blue-300 flex items-center gap-1 bg-blue-400/5 px-3 py-1.5 rounded border border-blue-400/20 hover:border-blue-400/50 transition-all"
+                                            >
+                                                <Edit3 size={18} /> <span className="text-[10px] font-black uppercase">Edit</span>
+                                            </button>
+                                            <button 
+                                                onClick={() => handleDelete(key, item._id)} 
+                                                className="text-red-500 hover:text-red-400 flex items-center gap-1 bg-red-500/5 px-3 py-1.5 rounded border border-red-500/20 hover:border-red-500/50 transition-all"
+                                            >
+                                                <Trash2 size={18} /> <span className="text-[10px] font-black uppercase">Del</span>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </section>
+                ))}
+            </main>
+
+            {/* MODAL */}
+            <AnimatePresence>
+                {modalOpen && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+                        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => !submitting && setModalOpen(false)} className="absolute inset-0 bg-black/90 backdrop-blur-sm" />
+                        <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }} className="relative bg-[#0d0d0d] border border-green-500/30 p-8 rounded w-full max-w-lg shadow-2xl">
+                            <h2 className="text-xl font-black text-white uppercase mb-6 flex items-center gap-2 tracking-tighter">
+                                <Terminal size={20} className="text-green-500" /> {currentItem ? 'Update' : 'Initialize'} {currentSection}
+                            </h2>
+                            
+                            <form onSubmit={handleSubmit} className="space-y-4">
+                                {currentSection === 'projects' && (
+                                    <>
+                                        <CyberInput label="Title" value={formData.title} onChange={v => setFormData({...formData, title: v})} />
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <CyberInput label="Image URL" value={formData.image} onChange={v => setFormData({...formData, image: v})} icon={<ImageIcon size={12}/>} />
+                                            <CyberInput label="Tech Stack (CSV)" value={formData.techStack} onChange={v => setFormData({...formData, techStack: v})} />
+                                        </div>
+                                        <textarea placeholder="Description" className="w-full p-3 bg-black border border-white/10 rounded focus:border-green-500 outline-none text-xs min-h-[100px] text-white" value={formData.description || ''} onChange={(e) => setFormData({...formData, description: e.target.value})} />
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <CyberInput label="Live Link" value={formData.liveLink} onChange={v => setFormData({...formData, liveLink: v})} icon={<Link size={12}/>} />
+                                            <CyberInput label="GitHub Link" value={formData.githubLink} onChange={v => setFormData({...formData, githubLink: v})} icon={<Github size={12}/>} />
+                                        </div>
+                                    </>
+                                )}
+                                {currentSection === 'milestones' && (
+                                    <>
+                                        <CyberInput label="Title" value={formData.title} onChange={v => setFormData({...formData, title: v})} />
+                                        <CyberInput label="Date" type="date" value={formData.date} onChange={v => setFormData({...formData, date: v})} />
+                                        <CyberInput label="Description" value={formData.description} onChange={v => setFormData({...formData, description: v})} />
+                                    </>
+                                )}
+                                {currentSection === 'marquee' && <CyberInput label="Scroll Text" value={formData.text} onChange={v => setFormData({...formData, text: v})} />}
+                                {currentSection === 'testimonials' && (
+                                    <>
+                                        <CyberInput label="Quote" value={formData.quote} onChange={v => setFormData({...formData, quote: v})} />
+                                        <CyberInput label="Source" value={formData.source} onChange={v => setFormData({...formData, source: v})} />
+                                    </>
+                                )}
+
+                                <div className="flex gap-4 mt-8 pt-4 border-t border-white/5">
+                                    <button type="button" onClick={() => setModalOpen(false)} className="flex-1 py-3 text-gray-500 uppercase text-[10px] font-black hover:text-white transition-all">Abort</button>
+                                    <button type="submit" disabled={submitting} className="flex-1 py-3 bg-green-600 text-black font-black uppercase text-[10px] hover:bg-green-400 transition-all flex items-center justify-center gap-2">
+                                        {submitting ? <Loader2 className="animate-spin w-4 h-4" /> : 'Confirm_Push'}
+                                    </button>
+                                </div>
+                            </form>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
+        </div>
     );
-  }
-
-  if (error) {
-    return (
-      <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4">
-        <p className="text-red-500 text-lg">{error}</p>
-      </div>
-    );
-  }
-
-  return (
-    <div className="min-h-screen bg-gray-100 py-8 px-4 sm:px-6 lg:px-8 flex justify-center">
-      <div className="max-w-4xl w-full">
-        <motion.h1
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-          className="text-3xl font-bold text-gray-900 mb-6 text-center"
-        >
-          Manage Projects
-        </motion.h1>
-
-        {/* Projects Section */}
-        <motion.section
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.5 }}
-          className="mb-8 bg-white p-6 rounded-lg shadow-sm"
-        >
-          <div className="flex justify-between items-center mb-6">
-            <h2 className="text-xl font-semibold text-gray-900">Projects</h2>
-            <button
-              onClick={() => openModal('projects')}
-              className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 text-sm sm:text-base transition-colors"
-            >
-              Add Project
-            </button>
-          </div>
-          {sections.projects.length === 0 ? (
-            <p className="text-gray-600 text-center">No projects available.</p>
-          ) : (
-            <div className="space-y-4">
-              {sections.projects.map((project) => (
-                <motion.div
-                  key={project._id}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.3 }}
-                  className="bg-white border-l-4 border-blue-500 rounded-lg p-4 shadow-sm hover:shadow-md hover:scale-[1.02] transition-all duration-200"
-                >
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between">
-                    <div className="mb-4 sm:mb-0">
-                      <h3 className="text-lg font-semibold text-gray-900">{project.title}</h3>
-                      <p className="text-sm text-gray-600 line-clamp-2">{project.description}</p>
-                      <p className="text-sm text-gray-500 mt-1">{project.techStack.join(', ')}</p>
-                    </div>
-                    <div className="flex space-x-2">
-                      <button
-                        onClick={() => openModal('projects', project)}
-                        className="flex items-center bg-blue-100 text-blue-700 px-3 py-1 rounded-lg hover:bg-blue-200 text-sm transition-colors"
-                        aria-label="Edit project"
-                      >
-                        <svg
-                          className="w-4 h-4 mr-1"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                          xmlns="http://www.w3.org/2000/svg"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth="2"
-                            d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
-                          />
-                        </svg>
-                        Edit
-                      </button>
-                      <button
-                        onClick={() => handleDelete('projects', project._id)}
-                        className="flex items-center bg-red-100 text-red-700 px-3 py-1 rounded-lg hover:bg-red-200 text-sm transition-colors"
-                        aria-label="Delete project"
-                      >
-                        <svg
-                          className="w-4 h-4 mr-1"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                          xmlns="http://www.w3.org/2000/svg"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth="2"
-                            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5-4h4M9 7v12m6-12v12"
-                          />
-                        </svg>
-                        Delete
-                      </button>
-                    </div>
-                  </div>
-                </motion.div>
-              ))}
-            </div>
-          )}
-        </motion.section>
-
-        {/* Milestones Section */}
-        <motion.section
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.5 }}
-          className="mb-8 bg-white p-6 rounded-lg shadow-sm"
-        >
-          <div className="flex justify-between items-center mb-6">
-            <h2 className="text-xl font-semibold text-gray-900">Milestones</h2>
-            <button
-              onClick={() => openModal('milestones')}
-              className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 text-sm sm:text-base transition-colors"
-            >
-              Add Milestone
-            </button>
-          </div>
-          {sections.milestones.length === 0 ? (
-            <p className="text-gray-600 text-center">No milestones available.</p>
-          ) : (
-            <div className="space-y-4">
-              {sections.milestones.map((milestone) => (
-                <motion.div
-                  key={milestone._id}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.3 }}
-                  className="bg-white border-l-4 border-green-500 rounded-lg p-4 shadow-sm hover:shadow-md hover:scale-[1.02] transition-all duration-200"
-                >
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between">
-                    <div className="mb-4 sm:mb-0">
-                      <h3 className="text-lg font-semibold text-gray-900">{milestone.title}</h3>
-                      <p className="text-sm text-gray-600 line-clamp-2">{milestone.description}</p>
-                      <p className="text-sm text-gray-500 mt-1">{milestone.date}</p>
-                    </div>
-                    <div className="flex space-x-2">
-                      <button
-                        onClick={() => openModal('milestones', milestone)}
-                        className="flex items-center bg-blue-100 text-blue-700 px-3 py-1 rounded-lg hover:bg-blue-200 text-sm transition-colors"
-                        aria-label="Edit milestone"
-                      >
-                        <svg
-                          className="w-4 h-4 mr-1"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                          xmlns="http://www.w3.org/2000/svg"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth="2"
-                            d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
-                          />
-                        </svg>
-                        Edit
-                      </button>
-                      <button
-                        onClick={() => handleDelete('milestones', milestone._id)}
-                        className="flex items-center bg-red-100 text-red-700 px-3 py-1 rounded-lg hover:bg-red-200 text-sm transition-colors"
-                        aria-label="Delete milestone"
-                      >
-                        <svg
-                          className="w-4 h-4 mr-1"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                          xmlns="http://www.w3.org/2000/svg"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth="2"
-                            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5-4h4M9 7v12m6-12v12"
-                          />
-                        </svg>
-                        Delete
-                      </button>
-                    </div>
-                  </div>
-                </motion.div>
-              ))}
-            </div>
-          )}
-        </motion.section>
-
-        {/* Marquee Items Section */}
-        <motion.section
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.5 }}
-          className="mb-8 bg-white p-6 rounded-lg shadow-sm"
-        >
-          <div className="flex justify-between items-center mb-6">
-            <h2 className="text-xl font-semibold text-gray-900">Marquee Items</h2>
-            <button
-              onClick={() => openModal('marquees')}
-              className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 text-sm sm:text-base transition-colors"
-            >
-              Add Marquee Item
-            </button>
-          </div>
-          {sections.marquees.length === 0 ? (
-            <p className="text-gray-600 text-center">No marquee items available.</p>
-          ) : (
-            <div className="space-y-4">
-              {sections.marquees.map((marquee) => (
-                <motion.div
-                  key={marquee._id}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.3 }}
-                  className="bg-white border-l-4 border-purple-500 rounded-lg p-4 shadow-sm hover:shadow-md hover:scale-[1.02] transition-all duration-200"
-                >
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between">
-                    <div className="mb-4 sm:mb-0">
-                      <p className="text-sm text-gray-600 line-clamp-2">{marquee.text}</p>
-                    </div>
-                    <div className="flex space-x-2">
-                      <button
-                        onClick={() => openModal('marquees', marquee)}
-                        className="flex items-center bg-blue-100 text-blue-700 px-3 py-1 rounded-lg hover:bg-blue-200 text-sm transition-colors"
-                        aria-label="Edit marquee item"
-                      >
-                        <svg
-                          className="w-4 h-4 mr-1"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                          xmlns="http://www.w3.org/2000/svg"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth="2"
-                            d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
-                          />
-                        </svg>
-                        Edit
-                      </button>
-                      <button
-                        onClick={() => handleDelete('marquees', marquee._id)}
-                        className="flex items-center bg-red-100 text-red-700 px-3 py-1 rounded-lg hover:bg-red-200 text-sm transition-colors"
-                        aria-label="Delete marquee item"
-                      >
-                        <svg
-                          className="w-4 h-4 mr-1"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                          xmlns="http://www.w3.org/2000/svg"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth="2"
-                            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5-4h4M9 7v12m6-12v12"
-                          />
-                        </svg>
-                        Delete
-                      </button>
-                    </div>
-                  </div>
-                </motion.div>
-              ))}
-            </div>
-          )}
-        </motion.section>
-
-        {/* Testimonials Section */}
-        <motion.section
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.5 }}
-          className="mb-8 bg-white p-6 rounded-lg shadow-sm"
-        >
-          <div className="flex justify-between items-center mb-6">
-            <h2 className="text-xl font-semibold text-gray-900">Testimonials</h2>
-            <button
-              onClick={() => openModal('testimonials')}
-              className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 text-sm sm:text-base transition-colors"
-            >
-              Add Testimonial
-            </button>
-          </div>
-          {sections.testimonials.length === 0 ? (
-            <p className="text-gray-600 text-center">No testimonials available.</p>
-          ) : (
-            <div className="space-y-4">
-              {sections.testimonials.map((testimonial) => (
-                <motion.div
-                  key={testimonial._id}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.3 }}
-                  className="bg-white border-l-4 border-yellow-500 rounded-lg p-4 shadow-sm hover:shadow-md hover:scale-[1.02] transition-all duration-200"
-                >
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between">
-                    <div className="mb-4 sm:mb-0">
-                      <p className="text-sm text-gray-600 italic line-clamp-2">"{testimonial.quote}"</p>
-                      <p className="text-sm font-semibold text-gray-900 mt-1">{testimonial.source}</p>
-                    </div>
-                    <div className="flex space-x-2">
-                      <button
-                        onClick={() => openModal('testimonials', testimonial)}
-                        className="flex items-center bg-blue-100 text-blue-700 px-3 py-1 rounded-lg hover:bg-blue-200 text-sm transition-colors"
-                        aria-label="Edit testimonial"
-                      >
-                        <svg
-                          className="w-4 h-4 mr-1"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                          xmlns="http://www.w3.org/2000/svg"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth="2"
-                            d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
-                          />
-                        </svg>
-                        Edit
-                      </button>
-                      <button
-                        onClick={() => handleDelete('testimonials', testimonial._id)}
-                        className="flex items-center bg-red-100 text-red-700 px-3 py-1 rounded-lg hover:bg-red-200 text-sm transition-colors"
-                        aria-label="Delete testimonial"
-                      >
-                        <svg
-                          className="w-4 h-4 mr-1"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                          xmlns="http://www.w3.org/2000/svg"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth="2"
-                            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5-4h4M9 7v12m6-12v12"
-                          />
-                        </svg>
-                        Delete
-                      </button>
-                    </div>
-                  </div>
-                </motion.div>
-              ))}
-            </div>
-          )}
-        </motion.section>
-
-        {/* Modal for Add/Edit */}
-        <AnimatePresence>
-          {modalOpen && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
-            >
-              <motion.div
-                initial={{ scale: 0.9, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                exit={{ scale: 0.9, opacity: 0 }}
-                className="bg-white p-6 rounded-lg w-full max-w-md max-h-[90vh] overflow-y-auto"
-              >
-                <h2 className="text-xl font-semibold text-gray-900 mb-4">
-                  {currentItem ? 'Edit' : 'Add'} {currentSection.slice(0, -1)}
-                </h2>
-                <form onSubmit={(e) => handleSubmit(e, currentSection)}>
-                  {currentSection === 'projects' && (
-                    <>
-                      <div className="mb-4">
-                        <label className="block text-sm text-gray-700 mb-1">Title</label>
-                        <input
-                          type="text"
-                          name="title"
-                          value={formData.title || ''}
-                          onChange={handleInputChange}
-                          className="w-full border rounded-lg px-3 py-2 text-sm"
-                          required
-                        />
-                      </div>
-                      <div className="mb-4">
-                        <label className="block text-sm text-gray-700 mb-1">Description</label>
-                        <textarea
-                          name="description"
-                          value={formData.description || ''}
-                          onChange={handleInputChange}
-                          className="w-full border rounded-lg px-3 py-2 text-sm"
-                          required
-                        />
-                      </div>
-                      <div className="mb-4">
-                        <label className="block text-sm text-gray-700 mb-1">Image URL</label>
-                        <input
-                          type="url"
-                          name="image"
-                          value={formData.image || ''}
-                          onChange={handleInputChange}
-                          className="w-full border rounded-lg px-3 py-2 text-sm"
-                        />
-                      </div>
-                      <div className="mb-4">
-                        <label className="block text-sm text-gray-700 mb-1">Tech Stack (comma-separated)</label>
-                        <input
-                          type="text"
-                          name="techStack"
-                          value={formData.techStack || ''}
-                          onChange={handleInputChange}
-                          className="w-full border rounded-lg px-3 py-2 text-sm"
-                        />
-                      </div>
-                      <div className="mb-4">
-                        <label className="block text-sm text-gray-700 mb-1">Live Link</label>
-                        <input
-                          type="url"
-                          name="liveLink"
-                          value={formData.liveLink || ''}
-                          onChange={handleInputChange}
-                          className="w-full border rounded-lg px-3 py-2 text-sm"
-                        />
-                      </div>
-                      <div className="mb-4">
-                        <label className="block text-sm text-gray-700 mb-1">GitHub Link</label>
-                        <input
-                          type="url"
-                          name="githubLink"
-                          value={formData.githubLink || ''}
-                          onChange={handleInputChange}
-                          className="w-full border rounded-lg px-3 py-2 text-sm"
-                        />
-                      </div>
-                    </>
-                  )}
-                  {currentSection === 'milestones' && (
-                    <>
-                      <div className="mb-4">
-                        <label className="block text-sm text-gray-700 mb-1">Title</label>
-                        <input
-                          type="text"
-                          name="title"
-                          value={formData.title || ''}
-                          onChange={handleInputChange}
-                          className="w-full border rounded-lg px-3 py-2 text-sm"
-                          required
-                        />
-                      </div>
-                      <div className="mb-4">
-                        <label className="block text-sm text-gray-700 mb-1">Date (YYYY-MM-DD)</label>
-                        <input
-                          type="text"
-                          name="date"
-                          value={formData.date || ''}
-                          onChange={handleInputChange}
-                          className="w-full border rounded-lg px-3 py-2 text-sm"
-                          required
-                        />
-                      </div>
-                      <div className="mb-4">
-                        <label className="block text-sm text-gray-700 mb-1">Description</label>
-                        <textarea
-                          name="description"
-                          value={formData.description || ''}
-                          onChange={handleInputChange}
-                          className="w-full border rounded-lg px-3 py-2 text-sm"
-                          required
-                        />
-                      </div>
-                    </>
-                  )}
-                  {currentSection === 'marquees' && (
-                    <div className="mb-4">
-                      <label className="block text-sm text-gray-700 mb-1">Text</label>
-                      <input
-                        type="text"
-                        name="text"
-                        value={formData.text || ''}
-                        onChange={handleInputChange}
-                        className="w-full border rounded-lg px-3 py-2 text-sm"
-                        required
-                      />
-                    </div>
-                  )}
-                  {currentSection === 'testimonials' && (
-                    <>
-                      <div className="mb-4">
-                        <label className="block text-sm text-gray-700 mb-1">Quote</label>
-                        <textarea
-                          name="quote"
-                          value={formData.quote || ''}
-                          onChange={handleInputChange}
-                          className="w-full border rounded-lg px-3 py-2 text-sm"
-                          required
-                        />
-                      </div>
-                      <div className="mb-4">
-                        <label className="block text-sm text-gray-700 mb-1">Source</label>
-                        <input
-                          type="text"
-                          name="source"
-                          value={formData.quote || ''}
-                          onChange={handleInputChange}
-                          className="w-full border rounded-lg px-3 py-2 text-sm"
-                          required
-                        />
-                      </div>
-                    </>
-                  )}
-                  <div className="flex justify-end space-x-2">
-                    <button
-                      type="button"
-                      onClick={() => setModalOpen(false)}
-                      className="bg-gray-200 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-300 text-sm transition-colors"
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      type="submit"
-                      className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 text-sm transition-colors"
-                    >
-                      {currentItem ? 'Update' : 'Add'}
-                    </button>
-                  </div>
-                </form>
-              </motion.div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
-    </div>
-  );
 };
+
+// UI COMPONENTS
+const CyberInput = ({ label, value, onChange, type = "text", icon }) => (
+    <div className="space-y-1">
+        <label className="text-[9px] text-gray-600 uppercase font-black tracking-widest flex items-center gap-2">{icon} {label}</label>
+        <input type={type} value={value || ''} onChange={(e) => onChange(e.target.value)} className="w-full bg-black border border-white/10 p-3 text-xs text-white focus:border-green-500 outline-none transition-all rounded shadow-inner" />
+    </div>
+);
 
 export default AdminProjects;

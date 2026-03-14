@@ -44,33 +44,47 @@ const HomePage = () => {
 
     const [journeyStats, setJourneyStats] = useState([]);
     const [notices, setNotices] = useState([]);
-    const [skills, setSkills] = useState([]);
     const [link, setLink] = useState({});
     const [currentSlide, setCurrentSlide] = useState(0);
     const [loading, setLoading] = useState(true);
+    const [logIndex, setLogIndex] = useState(0);
+
+    const loadingLogs = [
+        "INITIALIZING_SYSTEM...",
+        "ESTABLISHING_UPLINK...",
+        "SYNCING_DATA_NODES...",
+        "DECRYPTING_BIO_DATA...",
+        "SYSTEM_READY_FOR_ACCESS",
+    ];
+
+    useEffect(() => {
+        if (loading) {
+            const interval = setInterval(() => {
+                setLogIndex((prev) => (prev + 1) % loadingLogs.length);
+            }, 750);
+            return () => clearInterval(interval);
+        }
+    }, [loading]);
 
     useEffect(() => {
         const fetchData = async () => {
             try {
                 const apiUrl =
                     import.meta.env.VITE_LOCALHOST || "http://localhost:3500";
-                const [journeyRes, noticesRes, linksRes, skillsRes] =
+                const [journeyRes, noticesRes, linksRes] =
                     await Promise.all([
-                        fetch(`${apiUrl}/journey`),
-                        fetch(`${apiUrl}/notices`),
-                        fetch(`${apiUrl}/link`),
-                        fetch(`${apiUrl}/skills`),
+                        fetch(`${apiUrl}/api/home/devLog`),
+                        fetch(`${apiUrl}/api/home/notices`),
+                        fetch(`${apiUrl}/api/link`),
                     ]);
-                const [journeyData, noticesData, linksData, skillsData] =
+                const [journeyData, noticesData, linksData] =
                     await Promise.all([
                         journeyRes.json(),
                         noticesRes.json(),
                         linksRes.json(),
-                        skillsRes.json(),
                     ]);
-                setJourneyStats(journeyData);
+                setJourneyStats([journeyData]);
                 setNotices([...noticesData].reverse());
-                setSkills(skillsData);
                 setLink(linksData || {});
                 setLoading(false);
             } catch (err) {
@@ -87,14 +101,36 @@ const HomePage = () => {
         return () => clearInterval(interval);
     }, [slides.length]);
 
-        if (loading) return (
-                <div className="min-h-screen bg-[#050505] flex flex-col items-center justify-center font-mono text-green-500">
-                  <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1, ease: "linear" }}>
+    if (loading)
+        return (
+            <div className="min-h-screen bg-[#050505] flex flex-col items-center justify-center font-mono text-green-500">
+                <motion.div
+                    animate={{ rotate: 360 }}
+                    transition={{
+                        repeat: Infinity,
+                        duration: 1,
+                        ease: "linear",
+                    }}
+                >
                     <BiLoaderCircle className="text-6xl" />
-                  </motion.div>
-                  <p className="mt-4 font-bold tracking-[0.1em] uppercase text-xl">&gt; INITIALIZING_SYSTEM..!</p>
+                </motion.div>
+
+                <div className="mt-4 h-8 flex items-center justify-center">
+                    <AnimatePresence mode="wait">
+                        <motion.p
+                            key={logIndex}
+                            initial={{ opacity: 0, y: 5 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -5 }}
+                            transition={{ duration: 0.2 }}
+                            className="font-bold tracking-[0.1em] uppercase text-xl text-center"
+                        >
+                            &gt; {loadingLogs[logIndex]}
+                        </motion.p>
+                    </AnimatePresence>
                 </div>
-              );
+            </div>
+        );
 
     return (
         <div className="min-h-screen bg-[#050505] text-slate-200 font-sans selection:bg-green-500 selection:text-black">
@@ -112,7 +148,7 @@ const HomePage = () => {
                             <img
                                 src={Profile}
                                 alt="Harshad"
-                                className="w-56 h-56 md:w-72 md:h-72 rounded-xl object-cover grayscale hover:grayscale-0 transition-all duration-500"
+                                className="w-56 h-56 md:w-72 md:h-72 rounded-xl object-cover hover:grayscale transition-all duration-500"
                             />
                         </div>
                     </motion.div>
@@ -388,7 +424,7 @@ const HomePage = () => {
             </section>
 
             {/* CSS for custom scrollbar in notices */}
-            <style jsx>{`
+            <style>{`
                 .custom-scrollbar::-webkit-scrollbar {
                     width: 4px;
                 }
