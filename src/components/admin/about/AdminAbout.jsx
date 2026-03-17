@@ -1,330 +1,237 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { motion } from 'framer-motion';
-import SectionList from './SectionList';
-import AboutFormModal from './AboutFormModal';
+import { motion, AnimatePresence } from 'framer-motion';
+import { 
+  Loader2, Plus, Trash2, Edit3, Terminal, 
+  Cpu, GraduationCap, Briefcase, Award, 
+  Trophy, Zap, Image as ImageIcon, Link as LinkIcon, 
+  Calendar 
+} from 'lucide-react';
+
+const API = import.meta.env.VITE_LOCALHOST || 'http://localhost:3500';
 
 const AdminAbout = () => {
-  const [sections, setSections] = useState({
-    education: [],
-    experience: [],
-    certifications: [],
-    achievements: [],
-    skills: [],
-  });
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-  const [successMessage, setSuccessMessage] = useState('');
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editEntry, setEditEntry] = useState(null);
-  const [currentSection, setCurrentSection] = useState('');
+    const token = localStorage.getItem("token");
+    const [sections, setSections] = useState({
+        education: [], experience: [], certifications: [],
+        achievements: [], skills: [],
+    });
+    const [loading, setLoading] = useState(true);
+    const [submitting, setSubmitting] = useState(false);
+    const [error, setError] = useState('');
+    const [modalOpen, setModalOpen] = useState(false);
+    const [currentSection, setCurrentSection] = useState('');
+    const [currentItem, setCurrentItem] = useState(null);
+    const [formData, setFormData] = useState({});
 
-  // Fetch all section data
-  const fetchSections = useCallback(async (signal) => {
-    try {
-      setLoading(true);
-      setError('');
-      const apiUrl = import.meta.env.VITE_LOCALHOST || 'http://localhost:3500';
-      const sectionTypes = ['education', 'experience', 'certifications', 'achievements', 'skills'];
+    const config = {
+        education: { color: 'text-blue-400', border: 'border-blue-500/30', icon: <GraduationCap size={16}/> },
+        experience: { color: 'text-green-400', border: 'border-green-500/30', icon: <Briefcase size={16}/> },
+        certifications: { color: 'text-yellow-400', border: 'border-yellow-500/30', icon: <Award size={16}/> },
+        achievements: { color: 'text-purple-400', border: 'border-purple-500/30', icon: <Trophy size={16}/> },
+        skills: { color: 'text-red-400', border: 'border-red-500/30', icon: <Zap size={16}/> },
+    };
 
-      const promises = sectionTypes.map(async (type) => {
-        const response = await fetch(`${apiUrl}/${type}`, { signal });
-        if (!response.ok) {
-          throw new Error(`Failed to fetch ${type}: ${response.statusText}`);
+    const fetchData = useCallback(async () => {
+        try {
+            setLoading(true);
+            const types = Object.keys(config);
+            const promises = types.map(type => fetch(`${API}/api/about/${type}`).then(res => res.json()));
+            const results = await Promise.all(promises);
+            const newState = {};
+            types.forEach((type, index) => {
+                newState[type] = Array.isArray(results[index]) ? results[index] : [];
+            });
+            setSections(newState);
+        } catch (err) {
+            setError("LINK_FAILURE: Core systems unreachable.");
+        } finally {
+            setLoading(false);
         }
-        const data = await response.json().catch(() => {
-          throw new Error(`Invalid JSON response for ${type}`);
-        });
-        return { type, data: Array.isArray(data) ? data : [] };
-      });
+    }, []);
 
-      const results = await Promise.all(promises);
-      const newSections = results.reduce((acc, { type, data }) => {
-        acc[type] = data;
-        return acc;
-      }, {});
-      setSections(newSections);
-    } catch (err) {
-      if (err.name === 'AbortError') return;
-      setError(err.message || 'An unexpected error occurred');
-    } finally {
-      if (!signal.aborted) {
-        setLoading(false);
-      }
-    }
-  }, []);
+    useEffect(() => { fetchData(); }, [fetchData]);
 
-  useEffect(() => {
-    const controller = new AbortController();
-    fetchSections(controller.signal);
-    return () => controller.abort();
-  }, [fetchSections]);
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        setSubmitting(true);
+        try {
+            const isEdit = !!currentItem;
+            const url = isEdit ? `${API}/api/about/${currentSection}/${currentItem._id}` : `${API}/api/about/${currentSection}`;
+            const method = isEdit ? 'PATCH' : 'POST';
 
-  // Handle add/edit submission
-  const handleSubmit = async (formData, sectionType) => {
-    if (
-      !formData.title?.trim() &&
-      !formData.institution?.trim() &&
-      !formData.role?.trim() &&
-      !formData.name?.trim()
-    ) {
-      setError('A primary field (title, institution, role, or name) is required');
-      setTimeout(() => setError(''), 3000);
-      return false;
-    }
+            const res = await fetch(url, {
+                method,
+                headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+                body: JSON.stringify(formData)
+            });
 
-    try {
-      const apiUrl = import.meta.env.VITE_LOCALHOST || 'http://localhost:3500';
-      const isEditMode = !!formData._id;
-      const url = isEditMode ? `${apiUrl}/${sectionType}/${formData._id}` : `${apiUrl}/${sectionType}`;
-      const method = isEditMode ? 'PATCH' : 'POST';
-
-      const response = await fetch(url, {
-        method,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
-      });
-
-      if (!response.ok) {
-        throw new Error(`Failed to ${isEditMode ? 'update' : 'create'} ${sectionType}: ${response.statusText}`);
-      }
-
-      const updatedEntry = await response.json();
-      setSections((prev) => ({
-        ...prev,
-        [sectionType]: isEditMode
-          ? prev[sectionType].map((entry) => (entry._id === updatedEntry._id ? updatedEntry : entry))
-          : [...prev[sectionType], updatedEntry],
-      }));
-      setSuccessMessage(`${sectionType.charAt(0).toUpperCase() + sectionType.slice(1)} ${isEditMode ? 'updated' : 'created'} successfully!`);
-      setTimeout(() => setSuccessMessage(''), 3000);
-      return true;
-    } catch (err) {
-      setError(err.message || 'An unexpected error occurred');
-      setTimeout(() => setError(''), 3000);
-      return false;
-    }
-  };
-
-  // Handle deletion
-  const handleDelete = async (entryId, sectionType) => {
-    if (window.confirm(`Are you sure you want to delete this ${sectionType} entry?`)) {
-      try {
-        const apiUrl = import.meta.env.VITE_LOCALHOST || 'http://localhost:3500';
-        const response = await fetch(`${apiUrl}/${sectionType}/${entryId}`, {
-          method: 'DELETE',
-        });
-        if (!response.ok) {
-          throw new Error(`Failed to delete ${sectionType}: ${response.statusText}`);
+            if (res.ok) {
+                setModalOpen(false);
+                fetchData();
+            }
+        } catch (err) {
+            setError("SYNC_FAILURE: Host rejected the payload.");
+        } finally {
+            setSubmitting(false);
         }
-        setSections((prev) => ({
-          ...prev,
-          [sectionType]: prev[sectionType].filter((entry) => entry._id !== entryId),
-        }));
-        setSuccessMessage(`${sectionType.charAt(0).toUpperCase() + sectionType.slice(1)} deleted successfully!`);
-        setTimeout(() => setSuccessMessage(''), 3000);
-        return true;
-      } catch (err) {
-        setError(err.message || 'An unexpected error occurred');
-        setTimeout(() => setError(''), 3000);
-        return false;
-      }
-    }
-    return false;
-  };
+    };
 
-  // Open modal for adding new entry
-  const openAddModal = (sectionType) => {
-    setCurrentSection(sectionType);
-    setEditEntry(null);
-    setIsModalOpen(true);
-  };
+    const handleDelete = async (section, id) => {
+        if (!window.confirm(`ERASE_DATA_STREAM: ${id.slice(-4)}?`)) return;
+        try {
+            const res = await fetch(`${API}/api/about/${section}/${id}`, {
+                method: 'DELETE',
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            if (res.ok) fetchData();
+        } catch (err) {
+            setError("DELETE_FAILURE: Access denied.");
+        }
+    };
 
-  if (loading) {
+    const openModal = (section, item = null) => {
+        setCurrentSection(section);
+        setCurrentItem(item);
+        setFormData(item || {
+            institution: '', role: '', title: '', name: '',
+            logo: '', duration: '', score: '', description: '',
+            link: '', year: ''
+        });
+        setModalOpen(true);
+    };
+
+    if (loading) return <div className="min-h-screen bg-[#050505] flex items-center justify-center font-mono text-blue-500 animate-pulse uppercase tracking-[0.3em]">Syncing_Profile_Assets...</div>;
+
     return (
-      <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4">
-        <p className="text-gray-500 text-lg">Loading data...</p>
-      </div>
+        <div className="min-h-screen bg-[#050505] text-gray-300 font-mono p-4 md:p-8">
+            <header className="max-w-6xl mx-auto mb-12 flex items-center justify-between border-b border-white/5 pb-6">
+                <div className="flex items-center gap-3">
+                    <Terminal className="text-blue-500" />
+                    <h1 className="text-2xl font-black uppercase text-white tracking-tighter">About<span className="text-blue-500">_Registry</span></h1>
+                </div>
+            </header>
+
+            <main className="max-w-6xl mx-auto space-y-16">
+                {Object.keys(config).map((key) => (
+                    <section key={key}>
+                        <div className="flex justify-between items-end mb-6 border-l-2 border-blue-500 pl-4">
+                            <div>
+                                <h2 className={`text-[10px] font-bold uppercase tracking-[0.4em] ${config[key].color}`}>Node_{key}</h2>
+                                <p className="text-xl text-white font-bold uppercase tracking-tight">{key}</p>
+                            </div>
+                            <button onClick={() => openModal(key)} className="flex items-center gap-2 bg-white/5 border border-white/10 px-4 py-2 text-xs font-bold hover:bg-blue-500 hover:text-black transition-all">
+                                <Plus size={14} /> NEW_ENTRY
+                            </button>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {sections[key].map((item) => (
+                                <div key={item._id} className={`group bg-[#0a0a0a] border ${config[key].border} rounded flex overflow-hidden hover:bg-white/[0.02] transition-all duration-300`}>
+                                    
+                                    {/* LOGO BOX - Hidden for Achievements */}
+                                    {key !== 'achievements' && (
+                                        <div className="w-20 bg-black flex-shrink-0 border-r border-white/5 flex items-center justify-center p-4">
+                                            {item.logo ? (
+                                                <img 
+                                                    src={item.logo} alt="icon" 
+                                                    className="w-10 h-10 object-contain grayscale group-hover:grayscale-0 transition-all duration-500"
+                                                    onError={(e) => { e.target.style.display = 'none'; e.target.nextSibling.style.display = 'block'; }}
+                                                />
+                                            ) : null}
+                                            <div style={{ display: item.logo ? 'none' : 'block' }}>
+                                                <Cpu className="text-gray-800" size={24} />
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    <div className="p-4 flex-1 min-w-0">
+                                        <h3 className="text-white font-bold text-sm uppercase truncate mb-1">
+                                            {item.institution || item.role || item.title || item.name}
+                                        </h3>
+                                        <div className="text-[9px] text-gray-500 uppercase tracking-widest flex flex-wrap gap-x-4">
+                                            {item.duration && <span><Calendar size={8} className="inline mr-1"/>{item.duration}</span>}
+                                            {item.score && <span className="text-blue-500">{item.score}</span>}
+                                            {item.year && <span className="text-purple-500 underline underline-offset-2">FY_{item.year}</span>}
+                                        </div>
+                                        <div className="flex gap-4 mt-4 pt-3 border-t border-white/5">
+                                            <button onClick={() => openModal(key, item)} className="text-blue-400 hover:text-blue-300 flex items-center gap-1 text-[9px] font-black uppercase"><Edit3 size={14}/> Edit</button>
+                                            <button onClick={() => handleDelete(key, item._id)} className="text-red-500 hover:text-red-400 flex items-center gap-1 text-[9px] font-black uppercase"><Trash2 size={14}/> Del</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </section>
+                ))}
+            </main>
+
+            <AnimatePresence>
+                {modalOpen && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+                        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => !submitting && setModalOpen(false)} className="absolute inset-0 bg-black/95 backdrop-blur-sm" />
+                        <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }} className="relative bg-[#0d0d0d] border border-blue-500/30 p-8 rounded w-full max-w-lg shadow-2xl overflow-y-auto max-h-[90vh]">
+                            <h2 className="text-lg font-black text-white uppercase mb-6 flex items-center gap-2 tracking-tighter">
+                                {config[currentSection].icon} {currentItem ? 'Patch' : 'Inject'}_{currentSection}
+                            </h2>
+                            <form onSubmit={handleSubmit} className="space-y-4">
+                                {currentSection === 'education' && (
+                                    <>
+                                        <CyberInput label="Institution" value={formData.institution} onChange={v => setFormData({...formData, institution: v})} />
+                                        <CyberInput label="Duration" value={formData.duration} onChange={v => setFormData({...formData, duration: v})} />
+                                        <CyberInput label="Score" value={formData.score} onChange={v => setFormData({...formData, score: v})} />
+                                    </>
+                                )}
+                                {currentSection === 'experience' && (
+                                    <>
+                                        <CyberInput label="Role" value={formData.role} onChange={v => setFormData({...formData, role: v})} />
+                                        <CyberInput label="Duration" value={formData.duration} onChange={v => setFormData({...formData, duration: v})} />
+                                    </>
+                                )}
+                                {currentSection === 'certifications' && (
+                                    <>
+                                        <CyberInput label="Title" value={formData.title} onChange={v => setFormData({...formData, title: v})} />
+                                        <CyberInput label="Link" value={formData.link} onChange={v => setFormData({...formData, link: v})} icon={<LinkIcon size={12}/>} />
+                                    </>
+                                )}
+                                {currentSection === 'achievements' && (
+                                    <>
+                                        <CyberInput label="Achievement Title" value={formData.title} onChange={v => setFormData({...formData, title: v})} />
+                                        <CyberInput label="Year" value={formData.year} onChange={v => setFormData({...formData, year: v})} />
+                                    </>
+                                )}
+                                {currentSection === 'skills' && (
+                                    <CyberInput label="Skill Name" value={formData.name} onChange={v => setFormData({...formData, name: v})} />
+                                )}
+                                
+                                {currentSection !== 'skills' && (
+                                    <textarea placeholder="DESCRIPTION" className="w-full bg-black border border-white/10 p-3 text-xs text-white focus:border-blue-500 outline-none rounded min-h-[100px]" value={formData.description || ''} onChange={(e) => setFormData({...formData, description: e.target.value})} />
+                                )}
+                                
+                                {/* Logo URL hidden for Achievements */}
+                                {currentSection !== 'achievements' && (
+                                    <CyberInput label="Logo URL" value={formData.logo} onChange={v => setFormData({...formData, logo: v})} icon={<ImageIcon size={12}/>} />
+                                )}
+
+                                <div className="flex gap-4 mt-8 pt-4 border-t border-white/5">
+                                    <button type="button" onClick={() => setModalOpen(false)} className="flex-1 py-3 text-gray-600 uppercase text-[10px] font-black hover:text-white transition-all underline underline-offset-4">Abort</button>
+                                    <button type="submit" disabled={submitting} className="flex-1 py-3 bg-blue-600 text-black font-black uppercase text-[10px] hover:bg-blue-400 flex items-center justify-center gap-2 transition-all shadow-[0_0_15px_rgba(37,99,235,0.4)]">
+                                        {submitting ? <Loader2 className="animate-spin w-4 h-4" /> : 'Confirm_Push'}
+                                    </button>
+                                </div>
+                            </form>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
+        </div>
     );
-  }
-
-  return (
-    <div className="min-h-screen bg-gray-100 py-8 px-4 sm:px-6 lg:px-8 flex justify-center">
-      <div className="max-w-4xl w-full">
-        <motion.h1
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-          className="text-3xl font-bold text-gray-900 mb-6 text-center"
-        >
-          Manage About Page
-        </motion.h1>
-        {error && (
-          <p className="text-red-500 text-center mb-4" role="alert" aria-live="assertive">
-            {error}
-          </p>
-        )}
-        {successMessage && (
-          <p className="text-green-500 text-center mb-4" role="alert" aria-live="assertive">
-            {successMessage}
-          </p>
-        )}
-
-        {/* Education Section */}
-        <motion.section
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.5 }}
-          className="mb-8 bg-white p-6 rounded-lg shadow-sm"
-        >
-          <div className="flex justify-between items-center mb-6">
-            <h2 className="text-xl font-semibold text-gray-900">Education</h2>
-            <button
-              onClick={() => openAddModal('education')}
-              className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 text-sm sm:text-base transition-colors"
-            >
-              Add Education
-            </button>
-          </div>
-          <SectionList
-            entries={sections.education}
-            sectionType="education"
-            onEdit={(entry) => {
-              setCurrentSection('education');
-              setEditEntry(entry);
-              setIsModalOpen(true);
-            }}
-            onDelete={(entryId) => handleDelete(entryId, 'education')}
-          />
-        </motion.section>
-
-        {/* Experience Section */}
-        <motion.section
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.5 }}
-          className="mb-8 bg-white p-6 rounded-lg shadow-sm"
-        >
-          <div className="flex justify-between items-center mb-6">
-            <h2 className="text-xl font-semibold text-gray-900">Experience</h2>
-            <button
-              onClick={() => openAddModal('experience')}
-              className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 text-sm sm:text-base transition-colors"
-            >
-              Add Experience
-            </button>
-          </div>
-          <SectionList
-            entries={sections.experience}
-            sectionType="experience"
-            onEdit={(entry) => {
-              setCurrentSection('experience');
-              setEditEntry(entry);
-              setIsModalOpen(true);
-            }}
-            onDelete={(entryId) => handleDelete(entryId, 'experience')}
-          />
-        </motion.section>
-
-        {/* Certifications Section */}
-        <motion.section
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.5 }}
-          className="mb-8 bg-white p-6 rounded-lg shadow-sm"
-        >
-          <div className="flex justify-between items-center mb-6">
-            <h2 className="text-xl font-semibold text-gray-900">Certifications</h2>
-            <button
-              onClick={() => openAddModal('certifications')}
-              className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 text-sm sm:text-base transition-colors"
-            >
-              Add Certification
-            </button>
-          </div>
-          <SectionList
-            entries={sections.certifications}
-            sectionType="certifications"
-            onEdit={(entry) => {
-              setCurrentSection('certifications');
-              setEditEntry(entry);
-              setIsModalOpen(true);
-            }}
-            onDelete={(entryId) => handleDelete(entryId, 'certifications')}
-          />
-        </motion.section>
-
-        {/* Achievements Section */}
-        <motion.section
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.5 }}
-          className="mb-8 bg-white p-6 rounded-lg shadow-sm"
-        >
-          <div className="flex justify-between items-center mb-6">
-            <h2 className="text-xl font-semibold text-gray-900">Achievements</h2>
-            <button
-              onClick={() => openAddModal('achievements')}
-              className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 text-sm sm:text-base transition-colors"
-            >
-              Add Achievement
-            </button>
-          </div>
-          <SectionList
-            entries={sections.achievements}
-            sectionType="achievements"
-            onEdit={(entry) => {
-              setCurrentSection('achievements');
-              setEditEntry(entry);
-              setIsModalOpen(true);
-            }}
-            onDelete={(entryId) => handleDelete(entryId, 'achievements')}
-          />
-        </motion.section>
-
-        {/* Skills Section */}
-        <motion.section
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.5 }}
-          className="mb-8 bg-white p-6 rounded-lg shadow-sm"
-        >
-          <div className="flex justify-between items-center mb-6">
-            <h2 className="text-xl font-semibold text-gray-900">Skills</h2>
-            <button
-              onClick={() => openAddModal('skills')}
-              className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 text-sm sm:text-base transition-colors"
-            >
-              Add Skill
-            </button>
-          </div>
-          <SectionList
-            entries={sections.skills}
-            sectionType="skills"
-            onEdit={(entry) => {
-              setCurrentSection('skills');
-              setEditEntry(entry);
-              setIsModalOpen(true);
-            }}
-            onDelete={(entryId) => handleDelete(entryId, 'skills')}
-          />
-        </motion.section>
-
-        {isModalOpen && (
-          <AboutFormModal
-            entry={editEntry}
-            sectionType={currentSection}
-            onSubmit={handleSubmit}
-            onDelete={handleDelete}
-            onClose={() => {
-              setIsModalOpen(false);
-              setEditEntry(null);
-              setCurrentSection('');
-            }}
-          />
-        )}
-      </div>
-    </div>
-  );
 };
+
+const CyberInput = ({ label, value, onChange, type = "text", icon }) => (
+    <div className="space-y-1">
+        <label className="text-[9px] text-gray-600 uppercase font-black tracking-widest flex items-center gap-2">{icon} {label}</label>
+        <input type={type} value={value || ''} onChange={(e) => onChange(e.target.value)} className="w-full bg-black border border-white/10 p-2.5 text-xs text-white focus:border-blue-500 outline-none rounded font-mono" />
+    </div>
+);
 
 export default AdminAbout;

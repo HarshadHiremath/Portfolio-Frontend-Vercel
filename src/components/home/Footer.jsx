@@ -183,7 +183,6 @@ const Footer = () => {
 
                         <a
                             href="https://harshadhiremath.vercel.app/admin/login"
-                            target="_blank"
                             rel="noopener noreferrer"
                             className="text-[10px] font-bold text-green-400 uppercase tracking-tighter hover:text-green-300 transition-colors"
                         >

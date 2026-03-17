@@ -23,25 +23,38 @@ const ProjectsPage = () => {
                 const apiUrl =
                     import.meta.env.VITE_LOCALHOST || "http://localhost:3500";
                 const endpoints = [
-                    "projects",
-                    "milestones",
-                    "marquees",
-                    "testimonials",
+                    "api/project/projects",
+                    "api/project/milestones",
+                    "api/project/marquee",
+                    "api/project/testimonials",
                 ];
                 const results = await Promise.all(
                     endpoints.map(async (endpoint) => {
                         const response = await fetch(`${apiUrl}/${endpoint}`);
                         const json = await response.json();
+
                         return {
                             endpoint,
-                            data: Array.isArray(json) ? json : [],
+                            data: Array.isArray(json.data) ? json.data : [],
                         };
                     }),
                 );
-                const newData = results.reduce((acc, { endpoint, data }) => {
-                    acc[endpoint] = data;
-                    return acc;
-                }, {});
+                const newData = {
+                    projects: [],
+                    milestones: [],
+                    marquees: [],
+                    testimonials: [],
+                };
+
+                results.forEach(({ endpoint, data }) => {
+                    if (endpoint.includes("projects")) newData.projects = data;
+                    if (endpoint.includes("milestones"))
+                        newData.milestones = data;
+                    if (endpoint.includes("marquee")) newData.marquees = data;
+                    if (endpoint.includes("testimonials"))
+                        newData.testimonials = data;
+                });
+
                 setData(newData);
                 setLoading(false);
             } catch (err) {
@@ -51,7 +64,7 @@ const ProjectsPage = () => {
         fetchData();
     }, []);
 
-    if (loading) 
+    if (loading)
         return (
             <div className="min-h-screen bg-[#050505] flex flex-col items-center justify-center font-mono text-green-500">
                 <motion.div
@@ -79,7 +92,7 @@ const ProjectsPage = () => {
             </div>
 
             {/* 2. STICKY MARQUEE - SYSTEM STATUS */}
-            {data.marquees.length > 0 && (
+            {data.marquees?.length > 0 && (
                 <div className="sticky top-0 z-50 w-full border-b border-green-500/20 bg-black/80 backdrop-blur-md py-3 overflow-hidden">
                     <motion.div
                         animate={{ x: [0, -1000] }}
@@ -123,7 +136,7 @@ const ProjectsPage = () => {
                             _LOGS
                         </span>
                     </h1>
-                    <p className="text-xl text-slate-400 font-light max-w-2xl leading-relaxed">
+                    <p className="text-xl text-slate-400 font-bold max-w-2xl leading-relaxed">
                         <span className="text-green-500 font-bold">&gt;</span>{" "}
                         Real-world Applications
                         <span className="text-white font-semibold">
@@ -144,11 +157,11 @@ const ProjectsPage = () => {
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                        {data.projects.map((project, index) => (
+                        {data.projects?.map((project, index) => (
                             <motion.div
                                 key={project._id}
                                 whileHover={{ y: -10 }}
-                                className="group relative flex flex-col h-[600px] bg-gradient-to-b from-white/5 to-transparent border border-white/10 rounded-2xl overflow-hidden backdrop-blur-md shadow-2xl"
+                                className="group relative flex flex-col h-[550px] bg-gradient-to-b from-white/5 to-transparent border border-white/10 rounded-2xl overflow-hidden backdrop-blur-md shadow-2xl"
                             >
                                 {/* Image with Scanning Effect (Synced with Profile) */}
                                 <div className="relative h-56 shrink-0 overflow-hidden border-b border-white/10">
@@ -167,12 +180,12 @@ const ProjectsPage = () => {
                                         className="absolute left-0 right-0 h-[2px] bg-green-400/100 shadow-[0_0_15px_#4ade80] z-20 pointer-events-none"
                                     />
                                     <div className="absolute top-4 right-4 bg-black/80 px-3 py-1 text-[10px] font-bold text-green-500 border border-green-500/30 rounded">
-                                        NODE_0{index + 1}
+                                        Project_0{index + 1}
                                     </div>
                                 </div>
 
-                                <div className="p-8 flex flex-col flex-grow overflow-hidden">
-                                    <h3 className="text-2xl font-bold text-white mb-4 group-hover:text-green-400 transition-colors uppercase tracking-tight italic">
+                                <div className="p-5 flex flex-col flex-grow overflow-hidden">
+                                    <h3 className="text-2xl font-bold text-white mb-1 group-hover:text-green-400 transition-colors uppercase tracking-tight italic">
                                         {project.title}
                                     </h3>
 
@@ -184,7 +197,7 @@ const ProjectsPage = () => {
                                     </div>
 
                                     <div className="mt-auto">
-                                        <div className="flex flex-wrap gap-2 mb-8">
+                                        <div className="flex flex-wrap gap-2 mb-1">
                                             {project.techStack?.map((tech) => (
                                                 <span
                                                     key={tech}
@@ -195,7 +208,7 @@ const ProjectsPage = () => {
                                             ))}
                                         </div>
 
-                                        <div className="flex items-center justify-between pt-6 border-t border-white/5">
+                                        <div className="flex items-center justify-between pt-1 border-t border-gray-800">
                                             {project.liveLink && (
                                                 <a
                                                     href={project.liveLink}
@@ -238,7 +251,7 @@ const ProjectsPage = () => {
                     </div>
 
                     <div className="relative border-l-2 border-green-500/20 ml-4 md:ml-0">
-                        {data.milestones.map((m, idx) => (
+                        {data.milestones?.map((m, idx) => (
                             <motion.div
                                 key={m._id}
                                 initial={{ opacity: 0, x: -20 }}
@@ -288,7 +301,7 @@ const ProjectsPage = () => {
 
                     {/* Testimonials Grid */}
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 md:gap-10">
-                        {data.testimonials.map((t, idx) => (
+                        {data.testimonials?.map((t, idx) => (
                             <motion.div
                                 key={t._id}
                                 whileHover={{ y: -10, scale: 1.02 }}

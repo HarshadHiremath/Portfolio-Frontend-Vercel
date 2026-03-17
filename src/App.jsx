@@ -19,6 +19,11 @@ import AdminLayout from "./components/admin/Admin";
 import ProtectedRoute from "./components/admin/ProtectedRoute";
 import AdminHome from "./components/admin/home/AdminHome";
 import AdminProject from "./components/admin/project/AdminProject";
+import AdminCodeDev from "./components/admin/codeDev/AdminCodeDev";
+import AdminAbout from "./components/admin/about/AdminAbout";
+import AdminBlog from "./components/admin/blog/AdminBlog";
+import AdminContact from "./components/admin/contact/AdminContact";
+import AdminLink from "./components/admin/link/AdminLink";  
 
 // Layout with Navbar + Footer
 const MainLayout = () => (
@@ -96,8 +101,11 @@ const App = () => {
                                 <Route path="dashboard" element={<Admin />} />
                                 <Route path="home" element={<AdminHome />} />
                                 <Route path="project" element={<AdminProject />} />
-                                {/* <Route path="codeDev" element={<AdmincodeDev />} />
-                                <Route path="contact" element={<AdminContact />} /> */}
+                                <Route path="codeDev" element={<AdminCodeDev />} />
+                                <Route path="about" element={<AdminAbout />} />
+                                <Route path="blog" element={<AdminBlog />} />
+                                <Route path="contact" element={<AdminContact />} />
+                                <Route path="link" element={<AdminLink />} />
                             </Route>
                         </Route>
                     </Routes>
