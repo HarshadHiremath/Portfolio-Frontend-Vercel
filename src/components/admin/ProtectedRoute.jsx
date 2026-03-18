@@ -30,10 +30,12 @@ const ProtectedRoute = () => {
           setIsValid(true);
         } else {
           localStorage.removeItem("token");
+          setIsValid(false);
         }
 
       } catch (error) {
         localStorage.removeItem("token");
+        setIsValid(false);
       }
 
       setLoading(false);
