@@ -1,17 +1,18 @@
 import React, { useEffect, useState } from "react";
-import { Navigate, Outlet } from "react-router-dom";
+import { Navigate, Outlet, useLocation  } from "react-router-dom";
 import { BiLoaderCircle } from "react-icons/bi";
 import { motion, AnimatePresence } from "framer-motion";
 
 const ProtectedRoute = () => {
   const [loading, setLoading] = useState(true);
   const [isValid, setIsValid] = useState(false);
-
+  const location = useLocation();
   useEffect(() => {
     const verifyToken = async () => {
       const token = localStorage.getItem("token");
 
       if (!token) {
+        setIsValid(false);
         setLoading(false);
         return;
       }
@@ -39,7 +40,7 @@ const ProtectedRoute = () => {
     };
 
     verifyToken();
-  }, []);
+  }, [location.pathname]);
 
   if (loading) 
           return (

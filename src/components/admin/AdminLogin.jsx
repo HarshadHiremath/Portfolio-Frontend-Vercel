@@ -23,7 +23,7 @@ const AdminLogin = () => {
                         headers: {
                             Authorization: `Bearer ${token}`,
                         },
-                    },
+                    }, 
                 );
 
                 if (res.ok) {
