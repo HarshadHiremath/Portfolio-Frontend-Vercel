@@ -15,10 +15,10 @@ const AdminProjects = () => {
     const [formData, setFormData] = useState({});
 
     const config = {
-        projects: { color: 'text-blue-500', border: 'border-blue-500/70', label: 'Project' },
-        milestones: { color: 'text-red-400', border: 'border-red-500/70', label: 'Milestone' },
-        marquee: { color: 'text-green-400', border: 'border-green-500/70', label: 'Marquee' },
-        testimonials: { color: 'text-yellow-400', border: 'border-yellow-500/70', label: 'Testimonial' },
+        projects: { color: 'text-blue-500', border: 'border-blue-500/70', label: 'Project' , btncolor:'bg-blue-500' },
+        milestones: { color: 'text-red-400', border: 'border-red-500/70', label: 'Milestone', btncolor:'bg-blue-500' },
+        marquee: { color: 'text-green-400', border: 'border-green-500/70', label: 'Marquee', btncolor:'bg-green-500' },
+        testimonials: { color: 'text-yellow-400', border: 'border-yellow-500/70', label: 'Testimonial', btncolor:'bg-green-500' },
     };
 
     const fetchData = async () => {
@@ -140,14 +140,14 @@ const AdminProjects = () => {
             <main className="max-w-6xl mx-auto space-y-12 pb-20">
                 {Object.keys(config).map((key) => (
                     <section key={key}>
-                        <div className="flex flex-row justify-between items-end mb-6 border-l-2 border-green-500 pl-4 gap-4">
+                        <div className={`flex flex-row justify-between items-end mb-6 border-l-2 ${config[key].color} pl-4 gap-4`}>
                             <div>
                                 <h2 className={`text-[9px] md:text-[12px] font-bold uppercase tracking-[0.1em] ${config[key].color}`}>Storage_{key}</h2>
                                 <p className="text-xl md:text-xl text-white font-bold uppercase tracking-tight">{key}</p>
                             </div>
                             <button 
                                 onClick={() => openModal(key)}
-                                className="flex items-center gap-2 bg-white/5 border border-white/10 px-3 py-2 text-[10px] md:text-xs font-bold hover:bg-green-500 hover:text-black transition-all whitespace-nowrap"
+                                className={`flex items-center gap-2 bg-white/5 border border-white/10 px-3 py-2 text-[10px] md:text-xs font-bold hover:${config[key].btncolor} hover:text-black transition-all whitespace-nowrap`}
                             >
                                 <Plus size={14} /> NEW_ENTRY
                             </button>
@@ -156,7 +156,7 @@ const AdminProjects = () => {
                         {/* Responsive Grid */}
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                             {sections[key].map((item) => (
-                                <div key={item._id} className={`group bg-[#0a0a0a] border ${config[key].border} rounded flex flex-col sm:flex-row overflow-hidden hover:bg-white/[0.02] transition-all`}>
+                                <div key={item._id} className={`group bg-[#0a0a0a] border- rounded flex flex-col sm:flex-row overflow-hidden hover:${config[key].border} hover:bg-white/[0.02] transition-all`}>
                                     
                                     {/* PROJECT IMAGE PREVIEW */}
                                     {key === 'projects' && (
@@ -172,11 +172,11 @@ const AdminProjects = () => {
                                     <div className="p-4 flex-1 min-w-0 flex flex-col">
                                         <div className="flex justify-between items-start mb-1">
                                             <h3 className="text-white font-bold text-[18px] uppercase truncate w-full">
-                                                {item.title || item.text || item.quote}
+                                                {item.title || item.text || item.source}
                                             </h3>
                                         </div>
                                         <p className="text-[12px] text-gray-200 font-sans mb-4 line-clamp-4 h-10">
-                                            {item.description || item.source || 'No metadata available.'}
+                                            {item.description || item.quote || 'No metadata available.'}
                                         </p>
                                         
                                         {/* ACTION BUTTONS */}

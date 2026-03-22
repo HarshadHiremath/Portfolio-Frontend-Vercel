@@ -60,7 +60,7 @@ const AdminLogin = () => {
 
             const data = await res.json();
 
-            if (data.token) {
+            if (res.ok) {
                 localStorage.setItem("token", data.token);
 
                 navigate("/admin/dashboard");
