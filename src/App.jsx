@@ -27,9 +27,9 @@ import AdminLink from "./components/admin/link/AdminLink";
 
 // Layout with Navbar + Footer
 const MainLayout = () => (
-    <div className="min-h-screen bg-gray-100 flex flex-col">
+    <div className="min-h-screen bg-[#050505] flex flex-col">
         <Navbar />
-        <main className="flex-grow mt-16">
+        <main className="flex-grow mt-16 bg-[#050505]">
             <Outlet />
         </main>
         <Footer />
@@ -38,7 +38,7 @@ const MainLayout = () => (
 
 // Layout without Navbar
 const SimpleLayout = () => (
-    <div className="min-h-screen bg-gray-100">
+    <div className="min-h-screen bg-[#050505]">
         <Outlet />
     </div>
 );

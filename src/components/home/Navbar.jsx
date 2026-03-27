@@ -34,7 +34,7 @@ const Navbar = () => {
         <>
             {/* 1. DESKTOP NAVBAR - Glassmorphism System Bar */}
             <nav className="hidden md:block fixed top-0 w-full z-[100]">
-                <div className="w-full bg-black border border-green-500 px-6 py-3 flex items-center justify-between shadow-2xl">
+                <div className="w-full bg-black border-b-2 border-green-500 px-6 py-3 flex items-center justify-between shadow-2xl">
                     {/* Logo / Brand */}
                     <div className="flex items-center gap-5">
                         <div className="w-8 h-8 rounded-lg bg-green-500/10 border border-green-500/30 flex items-center justify-center">
@@ -96,7 +96,7 @@ const Navbar = () => {
             </nav>
 
             {/* 2. MOBILE TOP HEADER (Sticky Name) */}
-            <header className="md:hidden fixed top-0 w-full z-[100] bg-black border-b border-white/50 p-4 text-center">
+            <header className="md:hidden fixed top-0 w-full z-[100] bg-black border-b-2 border-green-500 p-4 text-center">
                 <div className="text-lg font-black text-white uppercase italic tracking-tighter">
                     Harshad<span className="text-green-500">_Hiremath</span>
                 </div>
@@ -104,7 +104,7 @@ const Navbar = () => {
 
             {/* 3. MOBILE BOTTOM NAVBAR (Synced with Home Dashboard) */}
             <nav className="md:hidden fixed bottom-0 w-full z-[100]">
-                <div className="bg-black border-2 border-white/50 flex justify-around items-center rounded-2xl shadow-[0_-10px_40px_rgba(0,0,0,0.5)]">
+                <div className="bg-black border-3 border-green-500 flex justify-around items-center rounded-2xl shadow-[0_-10px_40px_rgba(0,0,0,0.5)]">
                     {[
                         { to: "/", icon: <FaHome />, label: "Home" },
                         {
