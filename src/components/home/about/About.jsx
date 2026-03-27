@@ -183,14 +183,14 @@ const AboutPage = () => {
                                         </h3>
 
                                         <p className="text-sm font-bold text-slate-500 mb-4 tracking-tighter uppercase">
-                                            Score_Index:{" "}
+                                            Score :  {" "}
                                             <span className="text-white">
                                                 {edu.score}
                                             </span>
                                         </p>
 
                                         <div
-                                            className="text-[16px] text-slate-400 leading-relaxed font-light prose-invert selection:bg-green-500/30"
+                                            className="text-[16px] text-slate-400 text-justify leading-relaxed font-light prose-invert selection:bg-green-500/30"
                                             dangerouslySetInnerHTML={{
                                                 __html: edu.description,
                                             }}
@@ -216,12 +216,12 @@ const AboutPage = () => {
                             </div>
                             <div className="flex flex-col">
                                 <h2 className="text-[12px] font-bold font-bold text-green-500 uppercase tracking-[0.2em] leading-none mb-1">
-                                    System_Experience
+                                    Professional_Experience
                                 </h2>
                                 <span className="text-2xl font-black text-white italic uppercase tracking-tighter">
-                                    Service
+                                    Experience
                                     <span className="text-green-500">
-                                        _Nodes
+                                        _Internship
                                     </span>
                                 </span>
                             </div>
@@ -273,7 +273,7 @@ const AboutPage = () => {
                     <div className="flex items-center gap-6 mb-12">
                         <HiChip className="text-green-500 text-2xl" />
                         <h2 className="text-2xs font-bold text-green-500 uppercase tracking-[0.2em]">
-                            Core_Processor_Skills
+                            Skills_&_Tools
                         </h2>
                         <div className="h-[1px] flex-1 bg-gradient-to-r from-green-500/30 to-transparent"></div>
                     </div>

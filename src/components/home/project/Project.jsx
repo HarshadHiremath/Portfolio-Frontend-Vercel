@@ -161,7 +161,7 @@ const ProjectsPage = () => {
                             <motion.div
                                 key={project._id}
                                 whileHover={{ y: -10 }}
-                                className="group relative flex flex-col h-[550px] bg-gradient-to-b from-white/5 to-transparent border border-white/10 rounded-2xl overflow-hidden backdrop-blur-md shadow-2xl"
+                                className="group relative flex flex-col h-[515px] bg-gradient-to-b from-white/5 to-transparent border border-white/10 rounded-2xl overflow-hidden backdrop-blur-md shadow-2xl"
                             >
                                 {/* Image with Scanning Effect (Synced with Profile) */}
                                 <div className="relative h-56 shrink-0 overflow-hidden border-b border-white/10">
@@ -191,13 +191,13 @@ const ProjectsPage = () => {
 
                                     {/* Readability Focused Description Scroll */}
                                     <div className="flex-grow overflow-y-auto pr-2 custom-card-scroll mb-6">
-                                        <p className="text-[14px] text-slate-400 leading-relaxed font-sans font-bold">
+                                        <p className="text-[13px] text-slate-400 text-justify leading-relaxed font-medium">
                                             {project.description}
                                         </p>
                                     </div>
 
                                     <div className="mt-auto">
-                                        <div className="flex flex-wrap gap-2 mb-1">
+                                        <div className="flex flex-wrap gap-2 mb-2">
                                             {project.techStack?.map((tech) => (
                                                 <span
                                                     key={tech}
@@ -215,8 +215,8 @@ const ProjectsPage = () => {
                                                     target="_blank"
                                                     className="text-[11px] font-black text-green-500 flex items-center gap-2 tracking-[0.2em] uppercase hover:text-white transition-all"
                                                 >
-                                                    <HiExternalLink className="text-lg" />{" "}
-                                                    LIVE_DEPLOYMENT
+                                                    <HiExternalLink className="text-xl" />{" "}
+                                                    LIVE
                                                 </a>
                                             )}
                                             {project.githubLink && (
