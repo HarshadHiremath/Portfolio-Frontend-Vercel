@@ -168,7 +168,7 @@ const ProjectsPage = () => {
                                     <img
                                         src={project.image}
                                         alt={project.title}
-                                        className="w-full h-full object-cover opacity-50 group-hover:opacity-100 group-hover:grayscale-0 transition-all duration-700"
+                                        className="w-full h-full object-cover opacity-80 group-hover:opacity-100 group-hover:grayscale-0 transition-all duration-100"
                                     />
                                     <motion.div
                                         animate={{ top: ["0%", "100%", "0%"] }}
@@ -177,7 +177,7 @@ const ProjectsPage = () => {
                                             duration: 4,
                                             ease: "linear",
                                         }}
-                                        className="absolute left-0 right-0 h-[2px] bg-green-400/100 shadow-[0_0_15px_#4ade80] z-20 pointer-events-none"
+                                        className="absolute left-0 right-0 h-[2px] bg-green-400/15 shadow-[0_0_15px_#4ade80] z-20 pointer-events-none"
                                     />
                                     <div className="absolute top-4 right-4 bg-black/80 px-3 py-1 text-[10px] font-bold text-green-500 border border-green-500/30 rounded">
                                         Project_0{index + 1}

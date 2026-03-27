@@ -155,7 +155,7 @@ const CodingProfilesPage = () => {
                                 initial={{ opacity: 0, y: 20 }}
                                 whileInView={{ opacity: 1, y: 0 }}
                                 whileHover={{ y: -8 }}
-                                className="group relative bg-[#0a0a0a] border border-white/10 rounded-2xl p-8 overflow-hidden hover:border-green-500/40 transition-all duration-500"
+                                className="group relative bg-[#0a0a0a] border-2 border-white/20 rounded-2xl p-8 overflow-hidden hover:border-green-500/50 transition-all duration-100"
                             >
                                 {/* Background Scan Effect */}
                                 <motion.div
@@ -165,12 +165,12 @@ const CodingProfilesPage = () => {
                                         duration: 5,
                                         ease: "linear",
                                     }}
-                                    className="absolute left-0 right-0 h-[3px] bg-green-500/50 z-0 pointer-events-none"
+                                    className="absolute left-0 right-0 h-[2px] bg-green-500/20 z-0 pointer-events-none"
                                 />
 
                                 <div className="relative z-10 flex flex-col items-center">
                                     <div className="relative mb-6">
-                                        <div className="absolute -inset-2 bg-green-500/10 rounded-full blur-lg opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                                        <div className="absolute -inset-2 bg-green-500/10 rounded-full blur-lg opacity-70 group-hover:opacity-100 transition-opacity"></div>
                                         {profile.logo ? (
                                             <img
                                                 src={profile.logo}

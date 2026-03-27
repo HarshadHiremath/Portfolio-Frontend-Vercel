@@ -283,17 +283,17 @@ const AboutPage = () => {
                             <motion.div
                                 key={skill._id}
                                 whileHover={{ y: -5 }}
-                                className="bg-[#0a0a0a] border border-white/5 p-6 rounded-2xl flex flex-col items-center group hover:border-green-500/30 transition-all relative overflow-hidden"
+                                className="bg-[#0a0a0a] border border-white/5 p-6 rounded-2xl flex flex-col items-center group hover:border-green-500/90 relative overflow-hidden"
                             >
                                 {/* Scanning Line Effect */}
                                 <motion.div
                                     animate={{ top: ["0%", "100%", "0%"] }}
                                     transition={{
                                         repeat: Infinity,
-                                        duration: 2,
+                                        duration: 1,
                                         ease: "linear",
                                     }}
-                                    className="absolute left-0 right-0 h-[1px] bg-green-500/20 z-10 pointer-events-none opacity-0 group-hover:opacity-100"
+                                    className="absolute left-0 right-0 h-[2px] bg-green-500/30 z-10 pointer-events-none opacity-0 group-hover:opacity-100"
                                 />
                                 <div className="relative mb-4">
                                     {skill.logo ? (

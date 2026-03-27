@@ -74,45 +74,45 @@ const Contact = () => {
         }
         setIsSubmitting(true);
 
-        emailjs
-            .send(
-                import.meta.env.VITE_EMAIL_SERVICE_ID,
-                import.meta.env.VITE_EMAIL_TEMPLATE_ID,
-                formData,
-                import.meta.env.VITE_EMAIL_PUBLIC_KEY,
-            )
-            .then(
-                (result) => {
-                    //   alert("Message Sent Successfully Sender✅");
-                    console.log(result.text);
-                },
-                (error) => {
-                    alert("Failed to send message ❌", error);
-                    console.log(error.text);
-                },
-            );
+        // emailjs
+        //     .send(
+        //         import.meta.env.VITE_EMAIL_SERVICE_ID,
+        //         import.meta.env.VITE_EMAIL_TEMPLATE_ID,
+        //         formData,
+        //         import.meta.env.VITE_EMAIL_PUBLIC_KEY,
+        //     )
+        //     .then(
+        //         (result) => {
+        //             //   alert("Message Sent Successfully Sender✅");
+        //             console.log(result.text);
+        //         },
+        //         (error) => {
+        //             alert("Failed to send message ❌", error);
+        //             console.log(error.text);
+        //         },
+        //     );
 
-        emailjs
-            .send(
-                import.meta.env.VITE_EMAIL_SERVICE_ID,
-                "template_824qj44",
-                formData,
-                import.meta.env.VITE_EMAIL_PUBLIC_KEY,
-            )
-            .then(
-                (result) => {
-                    //   alert("Message Sent Successfully Owner ✅");
-                    console.log(result.text);
-                },
-                (error) => {
-                    alert("Failed to send message ❌", error);
-                    console.log(error.text);
-                },
-            );
+        // emailjs
+        //     .send(
+        //         import.meta.env.VITE_EMAIL_SERVICE_ID,
+        //         "template_824qj44",
+        //         formData,
+        //         import.meta.env.VITE_EMAIL_PUBLIC_KEY,
+        //     )
+        //     .then(
+        //         (result) => {
+        //             //   alert("Message Sent Successfully Owner ✅");
+        //             console.log(result.text);
+        //         },
+        //         (error) => {
+        //             alert("Failed to send message ❌", error);
+        //             console.log(error.text);
+        //         },
+        //     );
 
         try {
             const response = await fetch(
-                `${import.meta.env.VITE_LOCALHOST}/contact`,
+                `${import.meta.env.VITE_LOCALHOST}/api/contact`,
                 {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
