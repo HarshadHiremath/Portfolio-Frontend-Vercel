@@ -38,12 +38,12 @@ const Footer = () => {
     };
 
     return (
-        <footer className="relative bg-[#050505] pt-10 pb-24 md:pb-10 px-6 overflow-hidden border-t border-green-200">
+        <footer className="relative bg-[#050505] pt-10 pb-24 md:pb-5 px-6 overflow-hidden border-t-2 border-green-500">
             {/* Ambient background glow */}
             <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-full h-64 bg-green-500/5 blur-[120px] pointer-events-none"></div>
 
             <div className="max-w-7xl mx-auto relative z-10">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-12 mb-16">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-12 mb-5">
                     {/* 1. BRAND SECTION */}
                     <motion.div
                         initial={{ opacity: 0, y: 20 }}
@@ -51,7 +51,7 @@ const Footer = () => {
                         viewport={{ once: true }}
                         className="flex flex-col items-center md:items-start text-center md:text-left"
                     >
-                        <div className="relative group mb-6">
+                        <div className="relative group mb-5">
                             <div className="absolute -inset-1 bg-green-500 rounded-full blur opacity-20 group-hover:opacity-40 transition duration-500"></div>
                             <img
                                 src={logo}
@@ -78,10 +78,10 @@ const Footer = () => {
                         transition={{ delay: 0.1 }}
                         className="flex flex-col items-center"
                     >
-                        <h3 className="text-sm font-bold text-green-500 uppercase tracking-[0.2em] mb-8">
-                            // Connect
+                        <h3 className="text-lg font-bold text-green-500 uppercase tracking-[0.2em] mb-5">
+                            Connect
                         </h3>
-                        <div className="space-y-4 w-full max-w-[290px]">
+                        <div className="space-y-4 w-full max-w-[300px]">
                             <a
                                 href={`mailto:${link.gmail}`}
                                 className="flex items-center gap-4 group p-3 rounded-xl bg-white/5 border border-white/5 hover:border-green-500/30 transition-all"
@@ -162,7 +162,7 @@ const Footer = () => {
                             onClick={scrollToTop}
                             className="mt-8 flex items-center gap-2 text-[14px] font-bold text-white hover:text-green-500 transition-colors uppercase tracking-widest"
                         >
-                            &gt; Back_to_top <FaChevronUp />
+                            UP <FaChevronUp />
                         </button>
                     </motion.div>
                 </div>
@@ -172,8 +172,7 @@ const Footer = () => {
                     <div className="flex items-center gap-3">
                         <FaTerminal className="text-green-500 text-2xl animate-pulse" />
                         <p className="text-[12px] font-bold text-white uppercase tracking-widest">
-                            © {currentYear} Harshad Hiremath ||
-                            Powered_by_HARSGAD_GROUP
+                            © {currentYear} Harshad Hiremath | HGI
                         </p>
                     </div>
                     <div className="flex gap-6">

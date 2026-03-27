@@ -37,7 +37,7 @@ const AboutPage = () => {
                 ];
 
                 const promises = sectionTypes.map(async (type) => {
-                    const response = await fetch(`${apiUrl}/${type}`);
+                    const response = await fetch(`${apiUrl}/api/about/${type}`);
                     if (!response.ok)
                         throw new Error(`Failed to fetch ${type}`);
                     const data = await response.json();
@@ -360,7 +360,7 @@ const AboutPage = () => {
 
                     {/* Achievements */}
                     <section>
-                        <div className="flex items-center gap-4 mb-2">
+                        <div className="flex items-center gap-4 mb-8">
                             <FaTrophy className="text-green-500 text-xl" />
                             <h2 className="text-2xs font-bold text-green-500 uppercase tracking-[0.2em]">
                                 Achievements

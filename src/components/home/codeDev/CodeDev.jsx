@@ -15,35 +15,48 @@ const CodingProfilesPage = () => {
     const [error, setError] = useState("");
 
     useEffect(() => {
-        const fetchData = async () => {
-            try {
-                setLoading(true);
-                const apiUrl =
-                    import.meta.env.VITE_LOCALHOST || "http://localhost:3500";
-                const endpoints = ["profiles", "badges"];
+    const fetchData = async () => {
+        try {
+            setLoading(true);
 
-                const promises = endpoints.map(async (endpoint) => {
-                    const response = await fetch(`${apiUrl}/${endpoint}`);
-                    if (!response.ok)
-                        throw new Error(`Failed to fetch ${endpoint}`);
-                    const data = await response.json();
-                    return { endpoint, data: Array.isArray(data) ? data : [] };
-                });
+            const apiUrl =
+                import.meta.env.VITE_LOCALHOST || "http://localhost:3500";
 
-                const results = await Promise.all(promises);
-                const newData = results.reduce((acc, { endpoint, data }) => {
-                    acc[endpoint] = data;
-                    return acc;
-                }, {});
-                setData(newData);
-            } catch (err) {
-                setError(err.message || "Failed to fetch data");
-            } finally {
-                setLoading(false);
-            }
-        };
-        fetchData();
-    }, []);
+            const endpoints = ["profiles", "badges"];
+
+            const promises = endpoints.map(async (endpoint) => {
+                const response = await fetch(`${apiUrl}/api/codeDev/${endpoint}`);
+
+                if (!response.ok) {
+                    throw new Error(`Failed to fetch ${endpoint}`);
+                }
+
+                const result = await response.json();
+
+                return {
+                    endpoint,
+                    data: Array.isArray(result.data) ? result.data : []
+                };
+            });
+
+            const results = await Promise.all(promises);
+
+            const newData = results.reduce((acc, { endpoint, data }) => {
+                acc[endpoint] = data;
+                return acc;
+            }, {});
+
+            setData(newData);
+
+        } catch (err) {
+            setError(err.message || "Failed to fetch data");
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    fetchData();
+}, []);
 
     const totalQuestionsSolved = data.profiles.reduce(
         (sum, profile) => sum + (profile.questionsSolved || 0),
