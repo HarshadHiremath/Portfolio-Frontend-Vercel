@@ -61,7 +61,7 @@ const Navbar = () => {
                                 label: "CodeDev",
                             },
                             { to: "/about", icon: <FaUser />, label: "About" },
-                            { to: "/blog", icon: <FaBlog />, label: "Blog" },
+                            // { to: "/blog", icon: <FaBlog />, label: "Blog" },
                             {
                                 to: "/contact",
                                 icon: <FaEnvelope />,
@@ -114,7 +114,7 @@ const Navbar = () => {
                         },
                         { to: "/codedev", icon: <FaCode />, label: "CodeDev" },
                         { to: "/about", icon: <FaUser />, label: "About" },
-                        { to: "/blog", icon: <FaBlog />, label: "Blog" },
+                        // { to: "/blog", icon: <FaBlog />, label: "Blog" },
                         {
                             to: "/contact",
                             icon: <FaEnvelope />,

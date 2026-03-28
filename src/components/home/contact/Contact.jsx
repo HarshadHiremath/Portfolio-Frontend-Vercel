@@ -30,7 +30,7 @@ const Contact = () => {
         const fetchLinks = async () => {
             try {
                 const response = await fetch(
-                    `${import.meta.env.VITE_LOCALHOST}/link`,
+                    `${import.meta.env.VITE_LOCALHOST}/api/link`,
                 );
                 if (!response.ok) throw new Error(`Failed to fetch links`);
                 const data = await response.json();
