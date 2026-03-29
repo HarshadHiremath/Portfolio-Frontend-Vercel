@@ -12,28 +12,42 @@ import { useRef } from "react"; // NEW
 import { useNavigate } from "react-router-dom"; // NEW
 
 const ProjectsPage = () => {
-    const navigate = useNavigate(); // NEW
-    const routes = ["/", "/project", "/codedev", "/about", "/contact"]; // NEW
-    const touchStartX = useRef(0); // NEW
-    const touchEndX = useRef(0); // NEW
-    const minSwipeDistance = 50; // NEW
+    const navigate = useNavigate();
+
+    const routes = ["/", "/project", "/codedev", "/about", "/contact"];
+
+    const touchStartX = useRef(0);
+    const touchStartY = useRef(0);
+    const touchStartTime = useRef(0);
+
+    const minSwipeDistance = 120; // better than 200 (balanced)
+    const maxSwipeTime = 500; // max time for swipe
 
     const onTouchStart = (e) => {
-        touchStartX.current = e.targetTouches[0].clientX;
+        const touch = e.targetTouches[0];
+
+        touchStartX.current = touch.clientX;
+        touchStartY.current = touch.clientY;
+        touchStartTime.current = Date.now();
     };
 
-    const onTouchMove = (e) => {
-        touchEndX.current = e.targetTouches[0].clientX;
-    };
+    const onTouchEnd = (e) => {
+        const touch = e.changedTouches[0];
 
-    const onTouchEnd = () => {
-        const distance = touchStartX.current - touchEndX.current;
+        const deltaX = touch.clientX - touchStartX.current;
+        const deltaY = touch.clientY - touchStartY.current;
+        const deltaTime = Date.now() - touchStartTime.current;
 
-        if (Math.abs(distance) < minSwipeDistance) return;
+        // ❌ Ignore vertical scroll
+        if (Math.abs(deltaY) > Math.abs(deltaX)) return;
+
+        // ❌ Ignore slow or short swipe
+        if (Math.abs(deltaX) < minSwipeDistance || deltaTime > maxSwipeTime)
+            return;
 
         const currentIndex = routes.indexOf(window.location.pathname);
 
-        if (distance > 0) {
+        if (deltaX < 0) {
             // LEFT → NEXT
             const nextIndex = (currentIndex + 1) % routes.length;
             navigate(routes[nextIndex]);
@@ -123,7 +137,6 @@ const ProjectsPage = () => {
         <div
             className="min-h-screen bg-[#050505] text-slate-300 font-sans selection:bg-green-500 selection:text-black overflow-x-hidden"
             onTouchStart={onTouchStart}
-            onTouchMove={onTouchMove}
             onTouchEnd={onTouchEnd}
         >
             {/* 1. AMBIENT BACKGROUND (Synced with HomePage) */}
@@ -167,7 +180,7 @@ const ProjectsPage = () => {
                     className="mb-32 text-center lg:text-left"
                 >
                     <div className="inline-block px-3 py-1 mb-6 border border-green-500/30 bg-green-500/10 rounded-lg">
-                        <span className="text-green-400 text-[10px] font-bold uppercase tracking-[0.3em]">
+                        <span className="text-green-400 text-[12px] font-bold uppercase tracking-[0.3em]">
                             ● Production_Deployments
                         </span>
                     </div>

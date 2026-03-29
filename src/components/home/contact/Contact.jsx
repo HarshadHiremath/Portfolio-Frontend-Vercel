@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
     FaLinkedin,
     FaGithub,
-    FaTwitter,
+    FaDiscord,
     FaEnvelope,
     FaPhone,
     FaMapMarkerAlt,
@@ -13,31 +13,42 @@ import { useRef } from "react"; // NEW
 import { useNavigate } from "react-router-dom"; // NEW
 
 const Contact = () => {
-    const navigate = useNavigate(); // NEW
+    const navigate = useNavigate();
 
-    const routes = ["/", "/project", "/codedev", "/about", "/contact"]; // NEW
+    const routes = ["/", "/project", "/codedev", "/about", "/contact"];
 
-    const touchStartX = useRef(0); // NEW
-    const touchEndX = useRef(0); // NEW
+    const touchStartX = useRef(0);
+    const touchStartY = useRef(0);
+    const touchStartTime = useRef(0);
 
-    const minSwipeDistance = 50; // NEW
+    const minSwipeDistance = 120; // better than 200 (balanced)
+    const maxSwipeTime = 500; // max time for swipe
 
     const onTouchStart = (e) => {
-        touchStartX.current = e.targetTouches[0].clientX;
+        const touch = e.targetTouches[0];
+
+        touchStartX.current = touch.clientX;
+        touchStartY.current = touch.clientY;
+        touchStartTime.current = Date.now();
     };
 
-    const onTouchMove = (e) => {
-        touchEndX.current = e.targetTouches[0].clientX;
-    };
+    const onTouchEnd = (e) => {
+        const touch = e.changedTouches[0];
 
-    const onTouchEnd = () => {
-        const distance = touchStartX.current - touchEndX.current;
+        const deltaX = touch.clientX - touchStartX.current;
+        const deltaY = touch.clientY - touchStartY.current;
+        const deltaTime = Date.now() - touchStartTime.current;
 
-        if (Math.abs(distance) < minSwipeDistance) return;
+        // ❌ Ignore vertical scroll
+        if (Math.abs(deltaY) > Math.abs(deltaX)) return;
+
+        // ❌ Ignore slow or short swipe
+        if (Math.abs(deltaX) < minSwipeDistance || deltaTime > maxSwipeTime)
+            return;
 
         const currentIndex = routes.indexOf(window.location.pathname);
 
-        if (distance > 0) {
+        if (deltaX < 0) {
             // LEFT → NEXT
             const nextIndex = (currentIndex + 1) % routes.length;
             navigate(routes[nextIndex]);
@@ -135,7 +146,6 @@ const Contact = () => {
         <div
             className="min-h-screen bg-[#050505] text-slate-300 font-mono selection:bg-green-500 selection:text-black overflow-x-hidden relative"
             onTouchStart={onTouchStart}
-            onTouchMove={onTouchMove}
             onTouchEnd={onTouchEnd}
         >
             {/* 1. AMBIENT BACKGROUND GLOWS */}
@@ -144,23 +154,21 @@ const Contact = () => {
                 <div className="absolute bottom-[-5%] right-[-5%] w-[30%] h-[30%] bg-emerald-900/10 blur-[100px] rounded-full" />
             </div>
 
-            <div className="max-w-7xl mx-auto px-6 relative z-10 py-12 lg:py-24">
+            <div className="max-w-7xl mx-auto px-6 relative z-10 py-16 md:py-24">
                 {/* 2. HEADER SECTION */}
                 <motion.header
                     initial={{ opacity: 0, x: -50 }}
                     animate={{ opacity: 1, x: 0 }}
-                    className="mb-16 lg:mb-24"
+                    className="mb-32 text-center lg:text-left"
                 >
-                    <div className="flex items-center gap-4 mb-6">
-                        <div className="h-[1px] w-12 bg-green-500/50" />
-                        <span className="text-green-400 text-[10px] uppercase tracking-[0.5em] font-bold">
-                            Secure_Terminal_v4.0
+                    <div className="inline-block px-3 py-1 mb-6 border border-green-500/30 bg-green-500/10 rounded-lg">
+                        <span className="text-green-400 text-[12px] font-bold uppercase tracking-[0.3em]">
+                            ● Secure_Connection
                         </span>
                     </div>
-                    <h1 className="text-5xl md:text-7xl lg:text-8xl font-black text-white leading-none tracking-tighter uppercase italic">
+                    <h1 className="text-4xl sm:text-6xl md:text-8xl lg:text-9xl font-black mb-6 tracking-tighter text-white uppercase italic leading-none">
                         ESTABLISH
-                        <br />
-                        <span className="text-transparent bg-clip-text bg-gradient-to-r from-green-400 via-emerald-500 to-green-600">
+                        <span className="text-transparent bg-clip-text bg-gradient-to-r from-green-400 to-emerald-600 block sm:inline">
                             _UPLINK
                         </span>
                     </h1>
@@ -186,8 +194,8 @@ const Contact = () => {
                         <div className="absolute bottom-5 right-5 w-4 h-4 border-b-2 border-r-2 border-green-500/30 group-hover:border-green-500 transition-colors" />
 
                         <div className="flex justify-between items-center mb-10 border-b border-white/5 pb-6">
-                            <h3 className="text-lg font-bold text-white uppercase tracking-widest flex items-center gap-3">
-                                <FaSatellite className="text-green-500 text-sm animate-spin-slow" />
+                            <h3 className="text-xl font-bold text-white uppercase tracking-widest flex items-center gap-3">
+                                <FaSatellite className="text-green-500 text-2xl animate-spin-slow" />
                                 SEND_DATA_PACKET
                             </h3>
                             <div className="hidden md:block h-2 w-2 rounded-full bg-green-500 animate-ping" />
@@ -200,17 +208,17 @@ const Contact = () => {
                                         id: "user",
                                         label: "Identity",
                                         type: "text",
-                                        placeholder: "NAME_REF",
+                                        placeholder: "YOUR_NAME",
                                     },
                                     {
                                         id: "email",
                                         label: "Neural_Mail",
                                         type: "email",
-                                        placeholder: "ADDR@NODE.COM",
+                                        placeholder: "EmailId@gmail.com",
                                     },
                                 ].map((field) => (
                                     <div key={field.id} className="relative">
-                                        <label className="text-[10px] font-bold text-green-500/60 uppercase tracking-widest mb-3 block">
+                                        <label className="text-[14px] font-bold text-green-500 uppercase tracking-widest mb-3 block">
                                             {field.label}
                                         </label>
                                         <input
@@ -219,10 +227,10 @@ const Contact = () => {
                                             value={formData[field.id]}
                                             onChange={handleChange}
                                             placeholder={field.placeholder}
-                                            className="w-full bg-white/[0.03] border-b border-white/10 p-3 text-white focus:border-green-500 outline-none transition-all placeholder:text-slate-800 text-sm"
+                                            className="w-full bg-white/[0.03] border-b border-white/10 p-3 text-white focus:border-green-500 outline-none transition-all placeholder:text-slate-400 text-sm"
                                         />
                                         {errors[field.id] && (
-                                            <span className="absolute -bottom-5 left-0 text-[9px] text-red-500 font-bold">
+                                            <span className="absolute -bottom-5 left-0 text-[12px] text-red-400 font-bold">
                                                 ! {errors[field.id]}
                                             </span>
                                         )}
@@ -231,7 +239,7 @@ const Contact = () => {
                             </div>
 
                             <div className="relative">
-                                <label className="text-[10px] font-bold text-green-500/60 uppercase tracking-widest mb-3 block">
+                                <label className="text-[14px] font-bold text-green-500 uppercase tracking-widest mb-3 block">
                                     Secure_Line
                                 </label>
                                 <input
@@ -239,18 +247,18 @@ const Contact = () => {
                                     name="phone"
                                     value={formData.phone}
                                     onChange={handleChange}
-                                    placeholder="+XX 0000 000 000"
-                                    className="w-full bg-white/[0.03] border-b border-white/10 p-3 text-white focus:border-green-500 outline-none transition-all placeholder:text-slate-800 text-sm"
+                                    placeholder="+91 0000 000 000"
+                                    className="w-full bg-white/[0.03] border-b border-white/10 p-3 text-white focus:border-green-500 outline-none transition-all placeholder:text-slate-400 text-sm"
                                 />
                                 {errors.phone && (
-                                    <span className="absolute -bottom-5 left-0 text-[9px] text-red-500 font-bold">
+                                    <span className="absolute -bottom-5 left-0 text-[12px] text-red-400 font-bold">
                                         ! {errors.phone}
                                     </span>
                                 )}
                             </div>
 
                             <div className="relative">
-                                <label className="text-[10px] font-bold text-green-500/60 uppercase tracking-widest mb-3 block">
+                                <label className="text-[14px] font-bold text-green-500 uppercase tracking-widest mb-3 block">
                                     Message_Payload
                                 </label>
                                 <textarea
@@ -258,11 +266,11 @@ const Contact = () => {
                                     rows="4"
                                     value={formData.message}
                                     onChange={handleChange}
-                                    placeholder="ENTER_ENCRYPTED_MESSAGE..."
-                                    className="w-full bg-white/[0.03] border-b border-white/10 p-3 text-white focus:border-green-500 outline-none transition-all resize-none placeholder:text-slate-800 text-sm"
+                                    placeholder="ENTER_MESSAGE..."
+                                    className="w-full bg-white/[0.03] border-b border-white/10 p-3 text-white focus:border-green-500 outline-none transition-all resize-none placeholder:text-slate-400 text-sm"
                                 />
                                 {errors.message && (
-                                    <span className="absolute -bottom-5 left-0 text-[9px] text-red-500 font-bold">
+                                    <span className="absolute -bottom-5 left-0 text-[12px] text-red-400 font-bold">
                                         ! {errors.message}
                                     </span>
                                 )}
@@ -278,9 +286,7 @@ const Contact = () => {
                                 disabled={isSubmitting}
                                 className="w-full py-5 bg-green-500 text-black font-black uppercase tracking-widest rounded-xl hover:bg-green-400 transition-all disabled:opacity-50"
                             >
-                                {isSubmitting
-                                    ? "TRANSMITTING..."
-                                    : "INITIALIZE_SEND"}
+                                {isSubmitting ? "TRANSMITTING..." : "TRANSMIT"}
                             </motion.button>
                         </form>
 
@@ -307,13 +313,13 @@ const Contact = () => {
                             animate={{ opacity: 1, x: 0 }}
                             className="bg-white/[0.02] border border-white/10 p-6 rounded-[2rem] overflow-hidden group shadow-xl"
                         >
-                            <h4 className="text-[11px] font-bold text-green-500 mb-6 flex items-center gap-3 uppercase tracking-widest">
+                            <h4 className="text-[14px] font-bold text-green-500 mb-6 flex items-center gap-3 uppercase tracking-widest">
                                 <FaMapMarkerAlt /> System_Location:{" "}
                                 <span className="text-white">
                                     {link.Location}
                                 </span>
                             </h4>
-                            <div className="w-full h-64 rounded-2xl overflow-hidden border border-white/5 grayscale group-hover:grayscale-0 transition-all duration-700 opacity-40 group-hover:opacity-100">
+                            <div className="w-full h-64 rounded-2xl overflow-hidden border border-white/5 group-hover:grayscale-0 transition-all duration-100 opacity-70 group-hover:opacity-100">
                                 <iframe
                                     src={link.LocationLink}
                                     className="w-full h-full border-0"
@@ -331,7 +337,7 @@ const Contact = () => {
                             transition={{ delay: 0.2 }}
                             className="bg-gradient-to-br from-white/5 to-transparent border border-white/10 p-8 rounded-[2rem]"
                         >
-                            <h4 className="text-[11px] font-bold text-slate-500 mb-10 uppercase tracking-[0.3em]">
+                            <h4 className="text-[14px] font-bold text-slate-200 mb-10 uppercase tracking-[0.1em]">
                                 Access_Directory
                             </h4>
                             <div className="space-y-8">
@@ -358,10 +364,10 @@ const Contact = () => {
                                             {node.icon}
                                         </div>
                                         <div>
-                                            <p className="text-[9px] text-slate-600 uppercase font-bold mb-1">
+                                            <p className="text-[12px] text-slate-200 uppercase font-bold mb-1">
                                                 {node.label}
                                             </p>
-                                            <p className="text-white group-hover:text-green-400 transition-colors text-sm md:text-base">
+                                            <p className="text-white group-hover:text-green-400 transition-colors text-[12px] md:text-base">
                                                 {node.val}
                                             </p>
                                         </div>
@@ -377,7 +383,7 @@ const Contact = () => {
                                         href: link.linkedIn,
                                     },
                                     { icon: <FaGithub />, href: link.github },
-                                    { icon: <FaTwitter />, href: link.twitter },
+                                    { icon: <FaDiscord />, href: link.twitter },
                                 ].map((soc, i) => (
                                     <motion.a
                                         key={i}

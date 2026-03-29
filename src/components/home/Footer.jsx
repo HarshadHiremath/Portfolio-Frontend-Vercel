@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import {
     FaGithub,
     FaLinkedin,
-    FaTwitter,
+    FaDiscord,
     FaInstagram,
     FaYoutube,
     FaEnvelope,
@@ -127,7 +127,7 @@ const Footer = () => {
                                     color: "hover:bg-white hover:text-black",
                                 },
                                 {
-                                    icon: <FaTwitter />,
+                                    icon: <FaDiscord />,
                                     href: link.twitter,
                                     color: "hover:bg-blue-400",
                                 },
