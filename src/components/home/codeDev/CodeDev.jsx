@@ -8,55 +8,94 @@ import {
 } from "react-icons/hi";
 import { FaCode } from "react-icons/fa";
 import { BiLoaderCircle } from "react-icons/bi";
+import { useRef } from "react"; // NEW
+import { useNavigate } from "react-router-dom"; // NEW
 
 const CodingProfilesPage = () => {
+    const navigate = useNavigate(); // NEW
+
+    const routes = ["/", "/project", "/codedev", "/about", "/contact"]; // NEW
+
+    const touchStartX = useRef(0); // NEW
+    const touchEndX = useRef(0); // NEW
+
+    const minSwipeDistance = 50; // NEW
+
+    const onTouchStart = (e) => {
+        touchStartX.current = e.targetTouches[0].clientX;
+    };
+
+    const onTouchMove = (e) => {
+        touchEndX.current = e.targetTouches[0].clientX;
+    };
+
+    const onTouchEnd = () => {
+        const distance = touchStartX.current - touchEndX.current;
+
+        if (Math.abs(distance) < minSwipeDistance) return;
+
+        const currentIndex = routes.indexOf(window.location.pathname);
+
+        if (distance > 0) {
+            // LEFT → NEXT
+            const nextIndex = (currentIndex + 1) % routes.length;
+            navigate(routes[nextIndex]);
+        } else {
+            // RIGHT → PREVIOUS
+            const prevIndex =
+                (currentIndex - 1 + routes.length) % routes.length;
+            navigate(routes[prevIndex]);
+        }
+    };
+
     const [data, setData] = useState({ profiles: [], badges: [] });
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
 
     useEffect(() => {
-    const fetchData = async () => {
-        try {
-            setLoading(true);
+        const fetchData = async () => {
+            try {
+                setLoading(true);
 
-            const apiUrl =
-                import.meta.env.VITE_LOCALHOST || "http://localhost:3500";
+                const apiUrl =
+                    import.meta.env.VITE_LOCALHOST || "http://localhost:3500";
 
-            const endpoints = ["profiles", "badges"];
+                const endpoints = ["profiles", "badges"];
 
-            const promises = endpoints.map(async (endpoint) => {
-                const response = await fetch(`${apiUrl}/api/codeDev/${endpoint}`);
+                const promises = endpoints.map(async (endpoint) => {
+                    const response = await fetch(
+                        `${apiUrl}/api/codeDev/${endpoint}`,
+                    );
 
-                if (!response.ok) {
-                    throw new Error(`Failed to fetch ${endpoint}`);
-                }
+                    if (!response.ok) {
+                        throw new Error(`Failed to fetch ${endpoint}`);
+                    }
 
-                const result = await response.json();
+                    const result = await response.json();
 
-                return {
-                    endpoint,
-                    data: Array.isArray(result.data) ? result.data : []
-                };
-            });
+                    return {
+                        endpoint,
+                        data: Array.isArray(result.data) ? result.data : [],
+                    };
+                });
 
-            const results = await Promise.all(promises);
+                const results = await Promise.all(promises);
 
-            const newData = results.reduce((acc, { endpoint, data }) => {
-                acc[endpoint] = data;
-                return acc;
-            }, {});
+                const newData = results.reduce((acc, { endpoint, data }) => {
+                    acc[endpoint] = data;
+                    return acc;
+                }, {});
 
-            setData(newData);
+                setData(newData);
+            } catch (err) {
+                setError(err.message || "Failed to fetch data");
+            } finally {
+                setLoading(false);
+            }
+        };
 
-        } catch (err) {
-            setError(err.message || "Failed to fetch data");
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    fetchData();
-}, []);
+        fetchData();
+    }, []);
 
     const totalQuestionsSolved = data.profiles.reduce(
         (sum, profile) => sum + (profile.questionsSolved || 0),
@@ -83,7 +122,12 @@ const CodingProfilesPage = () => {
         );
 
     return (
-        <div className="min-h-screen bg-[#050505] text-slate-300 font-sans selection:bg-green-500 selection:text-black overflow-x-hidden">
+        <div
+            className="min-h-screen bg-[#050505] text-slate-300 font-sans selection:bg-green-500 selection:text-black overflow-x-hidden"
+            onTouchStart={onTouchStart}
+            onTouchMove={onTouchMove}
+            onTouchEnd={onTouchEnd}
+        >
             {/* 1. AMBIENT BACKGROUND GLOWS */}
             <div className="fixed inset-0 pointer-events-none z-0">
                 <div className="absolute top-0 -left-20 w-96 h-96 bg-green-500/5 blur-[120px] rounded-full"></div>
@@ -114,11 +158,10 @@ const CodingProfilesPage = () => {
                             <span className="text-green-500 font-mono">
                                 &gt;
                             </span>{" "}
-                            Life is Unpredictable and Unfair, Yet We Still Find Reasons to{" "}
-                            <span className="text-white">Solve Problems</span>
-                            .
+                            Life is Unpredictable and Unfair, Yet We Still Find
+                            Reasons to{" "}
+                            <span className="text-white">Solve Problems</span>.
                         </p>
-
 
                         {/* Total Stats Card */}
                         <div className="bg-white/5 border border-white/10 p-6 rounded-2xl backdrop-blur-md min-w-[280px]">

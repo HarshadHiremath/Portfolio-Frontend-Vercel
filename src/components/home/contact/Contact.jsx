@@ -6,15 +6,55 @@ import {
     FaTwitter,
     FaEnvelope,
     FaPhone,
-    FaTerminal,
     FaMapMarkerAlt,
     FaSatellite,
 } from "react-icons/fa";
-
-import emailjs from "@emailjs/browser";
+import { useRef } from "react"; // NEW
+import { useNavigate } from "react-router-dom"; // NEW
 
 const Contact = () => {
-    const [link, setLink] = useState({});
+    const navigate = useNavigate(); // NEW
+
+    const routes = ["/", "/project", "/codedev", "/about", "/contact"]; // NEW
+
+    const touchStartX = useRef(0); // NEW
+    const touchEndX = useRef(0); // NEW
+
+    const minSwipeDistance = 50; // NEW
+
+    const onTouchStart = (e) => {
+        touchStartX.current = e.targetTouches[0].clientX;
+    };
+
+    const onTouchMove = (e) => {
+        touchEndX.current = e.targetTouches[0].clientX;
+    };
+
+    const onTouchEnd = () => {
+        const distance = touchStartX.current - touchEndX.current;
+
+        if (Math.abs(distance) < minSwipeDistance) return;
+
+        const currentIndex = routes.indexOf(window.location.pathname);
+
+        if (distance > 0) {
+            // LEFT → NEXT
+            const nextIndex = (currentIndex + 1) % routes.length;
+            navigate(routes[nextIndex]);
+        } else {
+            // RIGHT → PREVIOUS
+            const prevIndex =
+                (currentIndex - 1 + routes.length) % routes.length;
+            navigate(routes[prevIndex]);
+        }
+    };
+
+    const [link, setLink] = useState({
+        Location: "FETCHING_COORDS...",
+        LocationLink: "",
+        gmail: "uplink@protocol.io",
+        phone: "+XX XXXXX XXXXX",
+    });
     const [formData, setFormData] = useState({
         user: "",
         email: "",
@@ -36,7 +76,7 @@ const Contact = () => {
                 const data = await response.json();
                 setLink(data);
             } catch (err) {
-                console.error(err);
+                console.error("Link fetch failed, using defaults");
             }
         };
         fetchLinks();
@@ -46,22 +86,18 @@ const Contact = () => {
         const { name, value } = e.target;
         setFormData((prev) => ({ ...prev, [name]: value }));
         setErrors((prev) => ({ ...prev, [name]: "" }));
-        setSuccess(false);
-        setServerError("");
     };
 
     const validate = () => {
         const newErrors = {};
-        if (!formData.user.trim()) newErrors.user = "IDENTITY_REQUIRED";
+        if (!formData.user.trim()) newErrors.user = "ID_REQUIRED";
         if (!formData.email.trim()) {
-            newErrors.email = "UPLINK_EMAIL_REQUIRED";
+            newErrors.email = "MAIL_NODE_MISSING";
         } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
             newErrors.email = "INVALID_PROTOCOL";
         }
-        if (!formData.phone.trim()) {
-            newErrors.phone = "COMMS_REQUIRED";
-        }
-        if (!formData.message.trim()) newErrors.message = "DATA_PACKET_EMPTY";
+        if (!formData.phone.trim()) newErrors.phone = "COMMS_REQUIRED";
+        if (!formData.message.trim()) newErrors.message = "PAYLOAD_EMPTY";
         return newErrors;
     };
 
@@ -73,7 +109,6 @@ const Contact = () => {
             return;
         }
         setIsSubmitting(true);
-
         try {
             const response = await fetch(
                 `${import.meta.env.VITE_LOCALHOST}/api/contact`,
@@ -87,8 +122,7 @@ const Contact = () => {
                 setSuccess(true);
                 setFormData({ user: "", email: "", phone: "", message: "" });
             } else {
-                const errorData = await response.json();
-                setServerError(errorData.error || "UPLINK_FAILED");
+                setServerError("UPLINK_FAILED");
             }
         } catch (error) {
             setServerError("NETWORK_DISRUPTION");
@@ -98,268 +132,261 @@ const Contact = () => {
     };
 
     return (
-        <div className="min-h-screen bg-[#050505] text-slate-300 font-sans selection:bg-green-500 selection:text-black overflow-x-hidden">
-            {/* AMBIENT BACKGROUND */}
+        <div
+            className="min-h-screen bg-[#050505] text-slate-300 font-mono selection:bg-green-500 selection:text-black overflow-x-hidden relative"
+            onTouchStart={onTouchStart}
+            onTouchMove={onTouchMove}
+            onTouchEnd={onTouchEnd}
+        >
+            {/* 1. AMBIENT BACKGROUND GLOWS */}
             <div className="fixed inset-0 pointer-events-none z-0">
-                <div className="absolute top-0 -left-20 w-96 h-96 bg-green-500/5 blur-[120px] rounded-full"></div>
-                <div className="absolute bottom-0 -right-20 w-96 h-96 bg-green-900/5 blur-[120px] rounded-full"></div>
+                <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-green-500/10 blur-[120px] rounded-full animate-pulse" />
+                <div className="absolute bottom-[-5%] right-[-5%] w-[30%] h-[30%] bg-emerald-900/10 blur-[100px] rounded-full" />
             </div>
 
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 relative z-10 py-16 md:py-24">
-                {/* 1. HEADER (Synced Typography) */}
+            <div className="max-w-7xl mx-auto px-6 relative z-10 py-12 lg:py-24">
+                {/* 2. HEADER SECTION */}
                 <motion.header
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="mb-20 text-center lg:text-left"
+                    initial={{ opacity: 0, x: -50 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    className="mb-16 lg:mb-24"
                 >
-                    <div className="inline-block px-3 py-1 mb-6 border border-green-500/20 bg-green-500/5 rounded-lg">
-                        <span className="text-green-400 text-[12px] font-bold uppercase tracking-[0.2em]">
-                            ● Protocol_Initialized: Uplink_Established
+                    <div className="flex items-center gap-4 mb-6">
+                        <div className="h-[1px] w-12 bg-green-500/50" />
+                        <span className="text-green-400 text-[10px] uppercase tracking-[0.5em] font-bold">
+                            Secure_Terminal_v4.0
                         </span>
                     </div>
-                    <h1 className="text-xl sm:text-xl md:text-8xl lg:text-6xl font-black mb-6 tracking-tighter text-white uppercase italic leading-none">
+                    <h1 className="text-5xl md:text-7xl lg:text-8xl font-black text-white leading-none tracking-tighter uppercase italic">
                         ESTABLISH
-                        <span className="text-transparent bg-clip-text bg-gradient-to-r from-green-400 to-emerald-600 block sm:inline">
+                        <br />
+                        <span className="text-transparent bg-clip-text bg-gradient-to-r from-green-400 via-emerald-500 to-green-600">
                             _UPLINK
                         </span>
                     </h1>
-                    <p className=" text-slate-400 text-lg font-light leading-relaxed">
-                        <span className="text-green-500 font-bold">&gt;</span>{" "}
-                        Feel free to reach out for collaborations, opportunities, just to
-                        <span className="text-white"> Say Hello </span> 
-                        Let’s create something impactful together.
+                    <p className="mt-8 max-w-2xl text-slate-400 text-base md:text-lg leading-relaxed font-sans">
+                        <span className="text-green-500 font-bold mr-2">
+                            &gt;
+                        </span>
+                        Initialize direct communication protocol for
+                        collaborations, innovative projects, or system
+                        inquiries.
                     </p>
                 </motion.header>
 
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-start">
-                    {/* 2. FORM SIDE (Lg: 7 Columns) */}
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-16">
+                    {/* 3. THE CONTACT FORM (7 COLUMNS) */}
                     <motion.div
-                        initial={{ opacity: 0, x: -30 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        className="lg:col-span-7 bg-[#0a0a0a] border border-white/10 p-8 rounded-3xl relative overflow-hidden group shadow-2xl"
+                        initial={{ opacity: 0, y: 30 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="lg:col-span-7 bg-white/[0.02] border border-white/10 backdrop-blur-md p-6 md:p-10 rounded-[2rem] relative group"
                     >
-                        {/* Scanning Line Effect (Synced) */}
-                        <motion.div
-                            animate={{ top: ["0%", "100%", "0%"] }}
-                            transition={{
-                                repeat: Infinity,
-                                duration: 2,
-                                ease: "linear",
-                            }}
-                            className="absolute left-0 right-0 h-[1px] bg-green-500 z-10 pointer-events-none opacity-100"
-                        />
+                        {/* Decorative Corner Brackets */}
+                        <div className="absolute top-5 left-5 w-4 h-4 border-t-2 border-l-2 border-green-500/30 group-hover:border-green-500 transition-colors" />
+                        <div className="absolute bottom-5 right-5 w-4 h-4 border-b-2 border-r-2 border-green-500/30 group-hover:border-green-500 transition-colors" />
 
-                        <h3 className="text-xl font-bold text-white mb-8 uppercase tracking-widest italic border-b border-white/5 pb-4 flex items-center gap-3">
-                            <FaSatellite className="text-green-500 text-sm" />{" "}
-                            Send Message / Feedback
-                        </h3>
+                        <div className="flex justify-between items-center mb-10 border-b border-white/5 pb-6">
+                            <h3 className="text-lg font-bold text-white uppercase tracking-widest flex items-center gap-3">
+                                <FaSatellite className="text-green-500 text-sm animate-spin-slow" />
+                                SEND_DATA_PACKET
+                            </h3>
+                            <div className="hidden md:block h-2 w-2 rounded-full bg-green-500 animate-ping" />
+                        </div>
 
-                        <form
-                            onSubmit={handleSubmit}
-                            className="space-y-6 relative z-20"
-                        >
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                {["user", "email"].map((field) => (
-                                    <div key={field}>
-                                        <label className="text-[14px] font-bold text-white uppercase tracking-widest mb-2 block">
-                                            {field === "user"
-                                                ? "Your Name"
-                                                : "Email"}
+                        <form onSubmit={handleSubmit} className="space-y-8">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                {[
+                                    {
+                                        id: "user",
+                                        label: "Identity",
+                                        type: "text",
+                                        placeholder: "NAME_REF",
+                                    },
+                                    {
+                                        id: "email",
+                                        label: "Neural_Mail",
+                                        type: "email",
+                                        placeholder: "ADDR@NODE.COM",
+                                    },
+                                ].map((field) => (
+                                    <div key={field.id} className="relative">
+                                        <label className="text-[10px] font-bold text-green-500/60 uppercase tracking-widest mb-3 block">
+                                            {field.label}
                                         </label>
                                         <input
-                                            type={
-                                                field === "email"
-                                                    ? "email"
-                                                    : "text"
-                                            }
-                                            name={field}
-                                            value={formData[field]}
+                                            type={field.type}
+                                            name={field.id}
+                                            value={formData[field.id]}
                                             onChange={handleChange}
-                                            placeholder={`INPUT_${field.toUpperCase()}...`}
-                                            className="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-white font-mono text-sm focus:border-green-500/50 outline-none transition-all placeholder:text-slate-700"
+                                            placeholder={field.placeholder}
+                                            className="w-full bg-white/[0.03] border-b border-white/10 p-3 text-white focus:border-green-500 outline-none transition-all placeholder:text-slate-800 text-sm"
                                         />
-                                        {errors[field] && (
-                                            <p className="mt-2 text-[9px] text-red-500 font-bold tracking-widest uppercase">
-                                                ! {errors[field]}
-                                            </p>
+                                        {errors[field.id] && (
+                                            <span className="absolute -bottom-5 left-0 text-[9px] text-red-500 font-bold">
+                                                ! {errors[field.id]}
+                                            </span>
                                         )}
                                     </div>
                                 ))}
                             </div>
 
-                            <div>
-                                <label className="text-[14px] font-bold text-white uppercase tracking-widest mb-2 block">
-                                    Phone_Number
+                            <div className="relative">
+                                <label className="text-[10px] font-bold text-green-500/60 uppercase tracking-widest mb-3 block">
+                                    Secure_Line
                                 </label>
                                 <input
                                     type="text"
                                     name="phone"
                                     value={formData.phone}
                                     onChange={handleChange}
-                                    placeholder="INPUT_PHONE_DIGITS..."
-                                    className="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-white font-mono text-sm focus:border-green-500/50 outline-none transition-all placeholder:text-slate-700"
+                                    placeholder="+XX 0000 000 000"
+                                    className="w-full bg-white/[0.03] border-b border-white/10 p-3 text-white focus:border-green-500 outline-none transition-all placeholder:text-slate-800 text-sm"
                                 />
                                 {errors.phone && (
-                                    <p className="mt-2 text-[9px] text-red-500 font-bold tracking-widest uppercase">
+                                    <span className="absolute -bottom-5 left-0 text-[9px] text-red-500 font-bold">
                                         ! {errors.phone}
-                                    </p>
+                                    </span>
                                 )}
                             </div>
 
-                            <div>
-                                <label className="text-[14px] font-bold text-white uppercase tracking-widest mb-2 block">
-                                    Message_Description
+                            <div className="relative">
+                                <label className="text-[10px] font-bold text-green-500/60 uppercase tracking-widest mb-3 block">
+                                    Message_Payload
                                 </label>
                                 <textarea
                                     name="message"
-                                    rows="5"
+                                    rows="4"
                                     value={formData.message}
                                     onChange={handleChange}
-                                    placeholder="TYPE_YOUR_MESSAGE_HERE..."
-                                    className="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-white font-mono text-sm focus:border-green-500/50 outline-none transition-all resize-none placeholder:text-slate-700"
-                                ></textarea>
+                                    placeholder="ENTER_ENCRYPTED_MESSAGE..."
+                                    className="w-full bg-white/[0.03] border-b border-white/10 p-3 text-white focus:border-green-500 outline-none transition-all resize-none placeholder:text-slate-800 text-sm"
+                                />
                                 {errors.message && (
-                                    <p className="mt-2 text-[9px] text-red-500 font-bold tracking-widest uppercase">
+                                    <span className="absolute -bottom-5 left-0 text-[9px] text-red-500 font-bold">
                                         ! {errors.message}
-                                    </p>
+                                    </span>
                                 )}
                             </div>
 
                             <motion.button
                                 whileHover={{
-                                    scale: 1.01,
+                                    scale: 1.02,
                                     boxShadow:
-                                        "0 0 20px rgba(34, 197, 94, 0.2)",
+                                        "0 0 30px rgba(34, 197, 94, 0.2)",
                                 }}
                                 whileTap={{ scale: 0.98 }}
                                 disabled={isSubmitting}
-                                className="w-full py-5 bg-green-500 text-black font-black uppercase rounded-xl transition-all disabled:opacity-50 flex items-center justify-center gap-3"
+                                className="w-full py-5 bg-green-500 text-black font-black uppercase tracking-widest rounded-xl hover:bg-green-400 transition-all disabled:opacity-50"
                             >
                                 {isSubmitting
-                                    ? "MESSAGE_SENDING..."
-                                    : "SEND_MESSAGE"}
+                                    ? "TRANSMITTING..."
+                                    : "INITIALIZE_SEND"}
                             </motion.button>
                         </form>
 
                         <AnimatePresence>
                             {(success || serverError) && (
                                 <motion.div
-                                    initial={{ opacity: 0, height: 0 }}
-                                    animate={{ opacity: 1, height: "auto" }}
-                                    className={`mt-6 p-4 rounded-xl text-center text-[10px] font-mono font-bold border ${success ? "border-green-500/50 text-green-500 bg-green-500/5" : "border-red-500/50 text-red-500 bg-red-500/5"}`}
+                                    initial={{ opacity: 0, y: 10 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    className={`mt-8 p-4 rounded-xl text-center text-xs font-bold border ${success ? "border-green-500/50 text-green-500 bg-green-500/5" : "border-red-500/50 text-red-500 bg-red-500/5"}`}
                                 >
                                     {success
-                                        ? "UPLINK_SUCCESS: Data_Packet_Stored_In_Archive"
-                                        : `UPLINK_CRITICAL_FAILURE: ${serverError}`}
+                                        ? "UPLINK_SUCCESS: Packet Received"
+                                        : `CRITICAL_ERR: ${serverError}`}
                                 </motion.div>
                             )}
                         </AnimatePresence>
                     </motion.div>
 
-                    {/* 3. INFO SIDE (Lg: 5 Columns) */}
-                    <div className="lg:col-span-5 space-y-8">
-                        {/* Coordinates / Map */}
+                    {/* 4. INFO SIDE (5 COLUMNS) */}
+                    <div className="lg:col-span-5 space-y-10">
+                        {/* Map Card */}
                         <motion.div
                             initial={{ opacity: 0, x: 30 }}
                             animate={{ opacity: 1, x: 0 }}
-                            className="bg-[#0a0a0a] border border-white/10 rounded-3xl p-6 shadow-xl"
+                            className="bg-white/[0.02] border border-white/10 p-6 rounded-[2rem] overflow-hidden group shadow-xl"
                         >
-                            <h3 className="text-[14px] font-bold text-green-500 mb-6 flex items-center gap-3 tracking-[0.1em] uppercase">
-                                <FaMapMarkerAlt /> GPS_Coordinates:{" "}
+                            <h4 className="text-[11px] font-bold text-green-500 mb-6 flex items-center gap-3 uppercase tracking-widest">
+                                <FaMapMarkerAlt /> System_Location:{" "}
                                 <span className="text-white">
                                     {link.Location}
                                 </span>
-                            </h3>
-                            <div className="w-full h-64 rounded-2xl overflow-hidden border border-white/5 grayscale group hover:grayscale-0 transition-all duration-1000">
+                            </h4>
+                            <div className="w-full h-64 rounded-2xl overflow-hidden border border-white/5 grayscale group-hover:grayscale-0 transition-all duration-700 opacity-40 group-hover:opacity-100">
                                 <iframe
                                     src={link.LocationLink}
-                                    className="w-full h-full border-0 opacity-60 hover:opacity-100 transition-opacity"
+                                    className="w-full h-full border-0"
                                     allowFullScreen
                                     loading="lazy"
-                                    title="HQ Location"
-                                ></iframe>
+                                    title="HQ"
+                                />
                             </div>
                         </motion.div>
 
-                        {/* Comms Links */}
+                        {/* Comms Links Card */}
                         <motion.div
                             initial={{ opacity: 0, x: 30 }}
                             animate={{ opacity: 1, x: 0 }}
-                            transition={{ delay: 0.1 }}
-                            className="bg-gradient-to-b from-white/5 to-transparent border border-white/10 rounded-3xl p-8"
+                            transition={{ delay: 0.2 }}
+                            className="bg-gradient-to-br from-white/5 to-transparent border border-white/10 p-8 rounded-[2rem]"
                         >
-                            <h3 className="text-sm font-bold text-slate-500 mb-8 uppercase tracking-[0.2em]">
-                                Direct_Comms_Directory
-                            </h3>
-                            <ul className="space-y-8">
+                            <h4 className="text-[11px] font-bold text-slate-500 mb-10 uppercase tracking-[0.3em]">
+                                Access_Directory
+                            </h4>
+                            <div className="space-y-8">
                                 {[
                                     {
                                         icon: <FaEnvelope />,
-                                        label: "Email_Node",
-                                        value: link.gmail,
+                                        val: link.gmail,
                                         href: `mailto:${link.gmail}`,
+                                        label: "Node_Email",
                                     },
                                     {
                                         icon: <FaPhone />,
-                                        label: "Secure_Voice",
-                                        value: link.phone,
+                                        val: link.phone,
                                         href: `tel:${link.phone}`,
+                                        label: "Voice_Link",
                                     },
-                                ].map((item, i) => (
-                                    <li
+                                ].map((node, i) => (
+                                    <a
                                         key={i}
+                                        href={node.href}
                                         className="flex items-center gap-6 group"
                                     >
-                                        <div className="p-4 rounded-2xl bg-white/5 border border-white/10 group-hover:border-green-500/50 transition-all">
-                                            <span className="text-green-500">
-                                                {item.icon}
-                                            </span>
+                                        <div className="p-4 rounded-2xl bg-white/5 border border-white/10 text-green-500 group-hover:border-green-500 group-hover:bg-green-500/10 transition-all">
+                                            {node.icon}
                                         </div>
-                                        <div className="overflow-hidden">
-                                            <p className="text-[10px] font-mono text-slate-600 uppercase mb-1 tracking-tighter">
-                                                {item.label}
+                                        <div>
+                                            <p className="text-[9px] text-slate-600 uppercase font-bold mb-1">
+                                                {node.label}
                                             </p>
-                                            <a
-                                                href={item.href}
-                                                className="text-lg text-white font-medium hover:text-green-400 transition-colors break-all leading-tight block"
-                                            >
-                                                {item.value}
-                                            </a>
+                                            <p className="text-white group-hover:text-green-400 transition-colors text-sm md:text-base">
+                                                {node.val}
+                                            </p>
                                         </div>
-                                    </li>
+                                    </a>
                                 ))}
-                            </ul>
+                            </div>
 
-                            <div className="mt-12 pt-8 border-t border-white/5 flex gap-5">
+                            {/* Socials */}
+                            <div className="mt-12 pt-8 border-t border-white/5 flex gap-4">
                                 {[
                                     {
                                         icon: <FaLinkedin />,
                                         href: link.linkedIn,
-                                        label: "LinkedIn",
                                     },
-                                    {
-                                        icon: <FaGithub />,
-                                        href: link.github,
-                                        label: "GitHub",
-                                    },
-                                    {
-                                        icon: <FaTwitter />,
-                                        href: link.twitter,
-                                        label: "Twitter",
-                                    },
-                                ].map((social, idx) => (
+                                    { icon: <FaGithub />, href: link.github },
+                                    { icon: <FaTwitter />, href: link.twitter },
+                                ].map((soc, i) => (
                                     <motion.a
-                                        key={idx}
-                                        href={social.href}
+                                        key={i}
+                                        whileHover={{ y: -5, color: "#22c55e" }}
+                                        href={soc.href}
                                         target="_blank"
-                                        rel="noreferrer"
-                                        whileHover={{ y: -5 }}
-                                        className="p-4 rounded-xl bg-white/5 border border-white/10 text-slate-500 hover:text-green-500 hover:border-green-500/50 transition-all"
-                                        title={social.label}
+                                        className="p-4 rounded-xl bg-white/5 border border-white/10 text-slate-500 transition-all"
                                     >
-                                        <span className="text-xl">
-                                            {social.icon}
-                                        </span>
+                                        {soc.icon}
                                     </motion.a>
                                 ))}
                             </div>
@@ -367,6 +394,21 @@ const Contact = () => {
                     </div>
                 </div>
             </div>
+
+            {/* Global Animation Styles */}
+            <style jsx>{`
+                @keyframes spin-slow {
+                    from {
+                        transform: rotate(0deg);
+                    }
+                    to {
+                        transform: rotate(360deg);
+                    }
+                }
+                .animate-spin-slow {
+                    animation: spin-slow 8s linear infinite;
+                }
+            `}</style>
         </div>
     );
 };

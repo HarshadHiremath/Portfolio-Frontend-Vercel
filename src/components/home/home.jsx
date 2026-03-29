@@ -11,6 +11,8 @@ import {
 import { BiLoaderCircle } from "react-icons/bi";
 import { HiOutlineSpeakerphone } from "react-icons/hi";
 import "./index.css";
+import { useRef } from "react"; // NEW
+import { useNavigate } from "react-router-dom"; // NEW
 
 // Asset Imports
 import Banner0 from "../../assets/Banner0.png";
@@ -67,6 +69,39 @@ const MetricItem = ({ icon, label, value, color, isLive }) => (
 );
 
 const HomePage = () => {
+    const navigate = useNavigate(); // NEW gesture
+    const routes = ["/", "/project", "/codedev", "/about", "/contact"]; // NEW
+    const touchStartX = useRef(0); // NEW
+    const touchEndX = useRef(0); // NEW
+    const minSwipeDistance = 50; // NEW
+
+    const onTouchStart = (e) => {
+        touchStartX.current = e.targetTouches[0].clientX;
+    };
+
+    const onTouchMove = (e) => {
+        touchEndX.current = e.targetTouches[0].clientX;
+    };
+
+    const onTouchEnd = () => {
+        const distance = touchStartX.current - touchEndX.current;
+
+        if (Math.abs(distance) < minSwipeDistance) return;
+
+        const currentIndex = routes.indexOf(window.location.pathname);
+
+        if (distance > 0) {
+            // LEFT → NEXT
+            const nextIndex = (currentIndex + 1) % routes.length;
+            navigate(routes[nextIndex]);
+        } else {
+            // RIGHT → PREVIOUS
+            const prevIndex =
+                (currentIndex - 1 + routes.length) % routes.length;
+            navigate(routes[prevIndex]);
+        }
+    };
+
     const slides = [
         { image: Banner0, alt: "Project 0" },
         { image: Banner1, alt: "Project 1" },
@@ -116,7 +151,8 @@ const HomePage = () => {
                 sessionId: sessionId,
             };
 
-            await fetch(`${import.meta.env.VITE_LOCALHOST}/api/home/visitors/track`,
+            await fetch(
+                `${import.meta.env.VITE_LOCALHOST}/api/home/visitors/track`,
                 {
                     method: "POST",
                     headers: {
@@ -218,7 +254,12 @@ const HomePage = () => {
         );
 
     return (
-        <div className="min-h-screen bg-[#050505] text-slate-200 font-sans selection:bg-green-500 selection:text-black">
+        <div
+            className="min-h-screen bg-[#050505] text-slate-200 font-sans selection:bg-green-500 selection:text-black"
+            onTouchStart={onTouchStart}
+            onTouchMove={onTouchMove}
+            onTouchEnd={onTouchEnd}
+        >
             {/* 1. HERO SECTION */}
             <section className="relative pt-20 pb-20 px-6 max-w-7xl mx-auto">
                 <div className="flex flex-col md:flex-row items-center gap-12">

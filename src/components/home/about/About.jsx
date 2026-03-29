@@ -10,8 +10,46 @@ import {
 } from "react-icons/hi";
 import { BiLoaderCircle } from "react-icons/bi";
 import { FaTrophy } from "react-icons/fa"; // Fixed HiTrophy error
+import { useRef } from "react"; // NEW
+import { useNavigate } from "react-router-dom"; // NEW
 
 const AboutPage = () => {
+    const navigate = useNavigate(); // NEW
+
+    const routes = ["/", "/project", "/codedev", "/about", "/contact"]; // NEW
+
+    const touchStartX = useRef(0); // NEW
+    const touchEndX = useRef(0); // NEW
+
+    const minSwipeDistance = 50; // NEW
+
+    const onTouchStart = (e) => {
+        touchStartX.current = e.targetTouches[0].clientX;
+    };
+
+    const onTouchMove = (e) => {
+        touchEndX.current = e.targetTouches[0].clientX;
+    };
+
+    const onTouchEnd = () => {
+        const distance = touchStartX.current - touchEndX.current;
+
+        if (Math.abs(distance) < minSwipeDistance) return;
+
+        const currentIndex = routes.indexOf(window.location.pathname);
+
+        if (distance > 0) {
+            // LEFT → NEXT
+            const nextIndex = (currentIndex + 1) % routes.length;
+            navigate(routes[nextIndex]);
+        } else {
+            // RIGHT → PREVIOUS
+            const prevIndex =
+                (currentIndex - 1 + routes.length) % routes.length;
+            navigate(routes[prevIndex]);
+        }
+    };
+
     const [sections, setSections] = useState({
         education: [],
         experience: [],
@@ -90,7 +128,12 @@ const AboutPage = () => {
         );
 
     return (
-        <div className="min-h-screen bg-[#050505] text-slate-300 font-sans selection:bg-green-500 selection:text-black overflow-x-hidden">
+        <div
+            className="min-h-screen bg-[#050505] text-slate-300 font-sans selection:bg-green-500 selection:text-black overflow-x-hidden"
+            onTouchStart={onTouchStart}
+            onTouchMove={onTouchMove}
+            onTouchEnd={onTouchEnd}
+        >
             {/* BACKGROUND DECORATION */}
             <div className="fixed inset-0 pointer-events-none z-0">
                 <div className="absolute top-0 -left-20 w-96 h-96 bg-green-500/5 blur-[120px] rounded-full"></div>
@@ -183,7 +226,7 @@ const AboutPage = () => {
                                         </h3>
 
                                         <p className="text-sm font-bold text-slate-500 mb-4 tracking-tighter uppercase">
-                                            Score :  {" "}
+                                            Score :{" "}
                                             <span className="text-white">
                                                 {edu.score}
                                             </span>
@@ -375,10 +418,10 @@ const AboutPage = () => {
                                     <div className="w-5 h-2 rounded-full bg-green-500 mt-2 shadow-[0_0_5px_#22c55e]"></div>
                                     <div>
                                         <div className="flex justify-between items-start gap-4">
-                                        <h4 className="text-lg font-bold text-white mb-1 uppercase tracking-tight italic">
-                                            {ach.title}
-                                        </h4>
-                                        <span className="text-[14px] font-bold font-bold text-green-500 tracking-widest">
+                                            <h4 className="text-lg font-bold text-white mb-1 uppercase tracking-tight italic">
+                                                {ach.title}
+                                            </h4>
+                                            <span className="text-[14px] font-bold font-bold text-green-500 tracking-widest">
                                                 Year : {ach.year || "2026"}
                                             </span>
                                         </div>
@@ -400,5 +443,3 @@ const AboutPage = () => {
 };
 
 export default AboutPage;
-
-
