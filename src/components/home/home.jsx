@@ -154,18 +154,40 @@ const HomePage = () => {
         try {
             let sessionId = localStorage.getItem("sessionId");
 
+            // 🟢 Generate sessionId if not present
             if (!sessionId) {
                 sessionId = crypto.randomUUID();
                 localStorage.setItem("sessionId", sessionId);
             }
 
+            // 🔍 Extract UTM parameters
+            const params = new URLSearchParams(window.location.search);
+
+            const utmSource =
+                params.get("utm_source") || params.get("src") || "direct";
+
+            // const utmCampaign =
+            //     params.get("utm_campaign") || params.get("campaign") || null;
+
+            // const utmMedium = params.get("utm_medium") || null;
+
+            // 📦 Prepare data (match your DB schema)
             const data = {
-                page: window.location.pathname,
+                sessionId,
+                // page: window.location.pathname,
                 screenSize: `${window.screen.width}x${window.screen.height}`,
-                sessionId: sessionId,
+
+                // UTM tracking
+                utmSource,
+                // utmCampaign,
+                // utmMedium,
+
+                // Optional but useful
+                language: navigator.language,
+                // referrer: document.referrer || "direct",
             };
 
-            await fetch(
+            const res = await fetch(
                 `${import.meta.env.VITE_LOCALHOST}/api/home/visitors/track`,
                 {
                     method: "POST",
@@ -175,6 +197,13 @@ const HomePage = () => {
                     body: JSON.stringify(data),
                 },
             );
+
+            const result = await res.json();
+
+            // 🔥 IMPORTANT: Update sessionId if backend created new one
+            if (result?.new && result?.sessionId) {
+                localStorage.setItem("sessionId", result.sessionId);
+            }
         } catch (error) {
             console.log("Visitor Tracking Error:", error);
         }
@@ -601,3 +630,62 @@ const HomePage = () => {
 };
 
 export default HomePage;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// const trackVisitor = async () => {
+//         try {
+//             let sessionId = localStorage.getItem("sessionId");
+
+//             if (!sessionId) {
+//                 sessionId = crypto.randomUUID();
+//                 localStorage.setItem("sessionId", sessionId);
+//             }
+
+//             const params = new URLSearchParams(window.location.search);
+
+//             const utmSource =
+//                 params.get("utm_source") || params.get("src") || "direct";
+
+//             const data = {
+//                 sessionId,
+//                 screenSize: `${window.screen.width}x${window.screen.height}`,
+//                 utmSource,
+//                 language: navigator.language,
+//             };
+
+//             const res = await fetch(
+//                 `${import.meta.env.VITE_LOCALHOST}/api/home/visitors/track`,
+//                 {
+//                     method: "POST",
+//                     headers: {
+//                         "Content-Type": "application/json",
+//                     },
+//                     body: JSON.stringify(data),
+//                 },
+//             );
+
+//             const result = await res.json();
+
+//             if (result?.new && result?.sessionId) {
+//                 localStorage.setItem("sessionId", result.sessionId);
+//             }
+//         } catch (error) {
+//             console.log("Visitor Tracking Error:", error);
+//         }
+//     };
