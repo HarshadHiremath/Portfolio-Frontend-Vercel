@@ -13,7 +13,7 @@ import { HiOutlineSpeakerphone } from "react-icons/hi";
 import "./index.css";
 import { useRef } from "react"; // NEW
 import { useNavigate } from "react-router-dom"; // NEW
-import UAParser from "ua-parser-js";
+import {UAParser} from "ua-parser-js";
 
 // Asset Imports
 import Banner0 from "../../assets/Banner0.png";

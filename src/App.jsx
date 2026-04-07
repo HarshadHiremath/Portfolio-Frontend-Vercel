@@ -24,6 +24,9 @@ import AdminAbout from "./components/admin/about/AdminAbout";
 import AdminBlog from "./components/admin/blog/AdminBlog";
 import AdminContact from "./components/admin/contact/AdminContact";
 import AdminLink from "./components/admin/link/AdminLink";  
+import VisitorDetails from "./components/admin/VisitorDetails";
+
+
 
 // Layout with Navbar + Footer
 const MainLayout = () => (
@@ -106,6 +109,7 @@ const App = () => {
                                 <Route path="blog" element={<AdminBlog />} />
                                 <Route path="contact" element={<AdminContact />} />
                                 <Route path="link" element={<AdminLink />} /> 
+                                <Route path="visitor/:id" element={<VisitorDetails />} />
                             </Route>
                         </Route>
                     </Routes>
