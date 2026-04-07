@@ -13,6 +13,7 @@ import { HiOutlineSpeakerphone } from "react-icons/hi";
 import "./index.css";
 import { useRef } from "react"; // NEW
 import { useNavigate } from "react-router-dom"; // NEW
+import UAParser from "ua-parser-js";
 
 // Asset Imports
 import Banner0 from "../../assets/Banner0.png";
@@ -171,6 +172,10 @@ const HomePage = () => {
 
             // const utmMedium = params.get("utm_medium") || null;
 
+             // Parse device/browser info
+            const parser = new UAParser();
+            const resultUA = parser.getResult();
+
             // 📦 Prepare data (match your DB schema)
             const data = {
                 sessionId,
@@ -185,6 +190,13 @@ const HomePage = () => {
                 // Optional but useful
                 language: navigator.language,
                 // referrer: document.referrer || "direct",
+
+                browserName: resultUA.browser.name,
+                osName: resultUA.os.name,
+                device: resultUA.device.type || "desktop",
+                deviceBrand: resultUA.device.vendor || "unknown",
+                userAgent: navigator.userAgent,
+                platform: navigator.platform,
             };
 
             const res = await fetch(
