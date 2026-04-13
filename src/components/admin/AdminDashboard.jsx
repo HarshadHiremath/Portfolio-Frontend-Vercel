@@ -1,39 +1,3 @@
-// import React from "react";
-
-// const AdminDashboard = () => {
-//   return (
-
-//     <div>
-
-//       <h2 className="text-2xl font-bold mb-6 text-green-400">
-//         Dashboard Overview
-//       </h2>
-
-//       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-
-//         <div className="bg-[#0f0f0f] p-6 rounded-xl border border-green-500/20">
-//           <h3 className="text-lg font-semibold">Projects</h3>
-//           <p className="text-3xl mt-2">12</p>
-//         </div>
-
-//         <div className="bg-[#0f0f0f] p-6 rounded-xl border border-green-500/20">
-//           <h3 className="text-lg font-semibold">Blogs</h3>
-//           <p className="text-3xl mt-2">8</p>
-//         </div>
-
-//         <div className="bg-[#0f0f0f] p-6 rounded-xl border border-green-500/20">
-//           <h3 className="text-lg font-semibold">Messages</h3>
-//           <p className="text-3xl mt-2">24</p>
-//         </div>
-
-//       </div>
-
-//     </div>
-//   );
-// };
-
-// export default AdminDashboard;
-
 import React, { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -48,7 +12,9 @@ import {
     Zap,
     MousePointer2,
     Clock,
+    Share2,
 } from "lucide-react";
+
 import { useNavigate } from "react-router-dom";
 
 const API = import.meta.env.VITE_LOCALHOST || "http://localhost:3500";
@@ -159,91 +125,118 @@ const AdminDashboard = () => {
                                 animate={{ opacity: 1, x: 0 }}
                                 transition={{ delay: index * 0.05 }}
                                 key={v._id}
-                                className="group relative bg-[#0a0a0a] border border-white/5 p-5 rounded hover:bg-white/[0.02] hover:border-green-500/30 transition-all duration-300"
+                                className="group relative bg-[#0a0a0a] border border-white/5 p-5 rounded hover:bg-white/[0.02] hover:border-green-500/30 transition-all duration-300 cursor-pointer overflow-hidden"
                             >
-                                {/* Session ID Tag */}
-                                <div className="absolute top-0 right-0 bg-green-500/10 px-3 py-1 text-[12px] text-green-500 font-black border-l border-b border-green-500/20 uppercase">
-                                    Session_{v.sessionId?.slice(-6) || "NULL"}
+                                {/* Session ID Tag (Last 6 Digits) */}
+                                <div className="absolute top-0 right-0 bg-green-500/10 px-3 py-1 text-[11px] text-green-500 font-black border-l border-b border-green-500/20 uppercase tracking-[0.2em]">
+                                    #{v.sessionId?.slice(-8) || "000000"}
                                 </div>
 
-                                <div className="grid grid-cols-1 md:grid-cols-4 lg:grid-cols-5 gap-6 items-center">
-                                    {/* IP & City */}
+                                <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6 items-center">
+                                    {/* IP & Location */}
                                     <div className="flex items-center gap-4">
-                                        <div className="w-10 h-10 rounded bg-green-500/5 flex items-center justify-center border border-green-500/10 group-hover:border-green-500/40">
+                                        <div className="w-10 h-10 rounded bg-green-500/5 flex items-center justify-center border border-green-500/10 group-hover:border-green-500/40 transition-colors">
                                             <Globe
                                                 size={18}
                                                 className="text-green-500"
                                             />
                                         </div>
                                         <div>
-                                            <p className="text-[12px] text-gray-400 uppercase font-bold">
-                                                Client IP
+                                            <p className="text-[12px] text-gray-500 uppercase font-bold tracking-tight">
+                                                Client Network
                                             </p>
-                                            <p className="text-sm font-bold text-gray-200 tracking-wider">
-                                                {v.ip} ({v.city || "Unknown"})
+                                            <p className="text-sm font-bold text-gray-200">
+                                                {v.ip}
                                             </p>
-                                        </div>
-                                    </div>
-
-                                    {/* OS & Browser */}
-                                    <div className="flex items-center gap-3">
-                                        <Cpu
-                                            size={18}
-                                            className="text-gray-600"
-                                        />
-                                        <div className="min-w-0">
-                                            <p className="text-[12px] text-gray-400 font-bold uppercase">
-                                                System OS
-                                            </p>
-                                            <p className="text-sm text-gray-200 font-bold truncate uppercase">
-                                                {v.osName} / {v.browserName}
+                                            <p className="text-[12px] font-bold text-green-400">
+                                                {v.city}, {v.region}
                                             </p>
                                         </div>
                                     </div>
 
-                                    {/* Session ID (Full) */}
+                                    {/* System & Device */}
                                     <div className="flex items-center gap-3">
                                         <Monitor
                                             size={18}
                                             className="text-gray-600"
                                         />
                                         <div>
-                                            <p className="text-[12px] font-bold text-gray-400 uppercase">
-                                                Session ID
+                                            <p className="text-[11px] text-gray-500 font-bold uppercase tracking-tight">
+                                                Platform
                                             </p>
-                                            <p className="text-xs font-bold text-gray-200 truncate max-w-[180px]">
-                                                {v.sessionId}
+                                            <p className="text-sm text-blue-400 font-bold truncate">
+                                                {v.osName} / {v.browserName}
+                                            </p>
+                                            <p className="text-[11px] text-green-400 italic capitalize">
+                                                {v.device}
                                             </p>
                                         </div>
                                     </div>
 
-                                    {/* Last Activity */}
-                                    <div className="flex items-center gap-3 md:hidden lg:flex">
-                                        <Zap
+                                    {/* Traffic Source */}
+                                    <div className="flex items-center gap-3">
+                                        <Share2
                                             size={18}
                                             className="text-gray-600"
                                         />
                                         <div>
-                                            <p className="text-[12px] font-bold text-gray-400 uppercase">
-                                                Last Active
+                                            <p className="text-[11px] text-gray-500 font-bold uppercase tracking-tight">
+                                                Source
                                             </p>
-                                            <p className="text-[10px] text-gray-200 uppercase">
+                                            <p className="text-sm text-yellow-400 font-bold capitalize">
+                                                {v.utmSource ||
+                                                    "Direct Traffic"}
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    {/* Day & Time Formatting */}
+                                    <div className="flex items-center gap-3">
+                                        <Zap
+                                            size={18}
+                                            className="text-green-500/50"
+                                        />
+                                        <div>
+                                            <p className="text-[11px] font-bold text-gray-500 uppercase tracking-tight">
+                                                Last Activity
+                                            </p>
+                                            <p className="text-sm text-gray-200 font-bold">
                                                 {new Date(
                                                     v.lastActivity,
-                                                ).toLocaleString()}
+                                                ).toLocaleDateString(
+                                                    undefined,
+                                                    {
+                                                        weekday: "short",
+                                                        day: "numeric",
+                                                        month: "short",
+                                                    },
+                                                )}
+                                            </p>
+                                            <p className="text-[12px] text-gray-400">
+                                                {new Date(
+                                                    v.lastActivity,
+                                                ).toLocaleTimeString([], {
+                                                    hour: "2-digit",
+                                                    minute: "2-digit",
+                                                })}
                                             </p>
                                         </div>
                                     </div>
                                 </div>
 
-                                {/* Footer */}
-                                <div className="mt-4 pt-3 border-t border-white/5 flex justify-between items-center text-[10px] text-gray-400 uppercase tracking-widest">
+                                {/* Footer Info */}
+                                <div className="mt-4 pt-3 border-t border-white/5 flex flex-wrap gap-4 font-bold items-center text-[11px] text-gray-200 uppercase tracking-widest">
                                     <span className="flex items-center gap-1">
-                                        <Clock size={14} /> Created:{" "}
+                                        <Clock size={12} />{" "}
                                         {new Date(v.createdAt).toLocaleString()}
                                     </span>
-                                    <span className="truncate max-w-[200px] md:max-w-md">
-                                        City: {v.city || "Unknown"}
+                                    <span className="opacity-20">|</span>
+                                    <span className="text-red-400">
+                                        Provider:{" "}
+                                        {v.org
+                                            ?.split(" ")
+                                            .slice(1, 3)
+                                            .join(" ") || "Unknown ISP"}
                                     </span>
                                 </div>
                             </motion.div>
@@ -254,5 +247,4 @@ const AdminDashboard = () => {
         </div>
     );
 };
-
 export default AdminDashboard;
