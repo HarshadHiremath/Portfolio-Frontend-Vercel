@@ -15,7 +15,7 @@ const VisitorDetails = () => {
         const data = await res.json();
         setVisitor(data);
       } catch (err) {
-        console.error("System Error: Critical data link failure.", err);
+        console.error("Error fetching visitor:", err);
       }
     };
     fetchVisitor();
@@ -23,141 +23,160 @@ const VisitorDetails = () => {
 
   if (!visitor) {
     return (
-      <div className="min-h-screen bg-[#050505] flex items-center justify-center">
-        <div className="flex flex-col items-center gap-4">
-          <div className="w-12 h-12 border-4 border-green-500 border-t-transparent rounded-full animate-spin"></div>
-          <p className="text-green-500 font-mono tracking-widest animate-pulse uppercase">Synchronizing Data...</p>
+      <div className="min-h-screen bg-[#0B0F19] flex items-center justify-center">
+        <div className="text-slate-400 animate-pulse">
+          Loading visitor data...
         </div>
       </div>
     );
   }
 
-  // Google Maps Integration using loc coordinates
-  const mapUrl = `https://maps.google.com/maps?q=${visitor.loc}&t=&z=15&ie=UTF8&iwloc=&output=embed`;
+  const mapUrl = `https://maps.google.com/maps?q=${visitor.loc}&z=15&output=embed`;
 
   return (
-    <div className="min-h-screen bg-[#050505] text-white font-sans p-4 lg:p-10 selection:bg-green-500 selection:text-black">
-      {/* --- TOP NAVIGATION BAR --- */}
-      <header className="max-w-7xl mx-auto flex flex-col md:flex-row md:items-center justify-between mb-10 gap-4 border-b border-white/10 pb-6">
+    <div className="min-h-screen bg-[#0B0F19] text-white px-4 lg:px-10 py-6 
+    bg-[radial-gradient(circle_at_top,rgba(99,102,241,0.15),transparent_40%)]">
+
+      {/* HEADER */}
+      <header className="max-w-7xl mx-auto flex justify-between items-center mb-8">
         <div>
-          <div className="flex items-center gap-2 mb-1">
-            <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
-            <span className="text-green-500 font-mono text-xs font-bold tracking-widest uppercase">Live Visitors Data</span>
-          </div>
-          <h1 className="text-3xl font-light tracking-tight">
-            Visitor <span className="font-bold text-green-500">Node {visitor._id.slice(-6)}</span>
+          <h1 className="text-2xl font-semibold">
+            Visitor Overview
           </h1>
+          <p className="text-sm text-slate-400">
+            ID: <span className="text-red-400">{visitor._id}</span>
+          </p>
         </div>
-        <button 
+
+        <button
           onClick={() => navigate(-1)}
-          className="px-6 py-2 border border-white/20 hover:border-green-500 hover:text-green-500 transition-all font-mono text-xs uppercase"
+          className="px-4 py-2 rounded-lg bg-white/5 hover:bg-white/10 text-sm transition"
         >
-          Exit
+          Back
         </button>
       </header>
 
-      <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-8">
-        
-        {/* --- LEFT COLUMN: NETWORK & DEVICE (8 COLS) --- */}
-        <div className="lg:col-span-8 space-y-8">
-          
-          {/* Network Intel Card */}
-          <section className="bg-[#0f0f0f] border border-white/5 p-8 rounded-lg">
-            <h2 className="text-green-500 text-xs font-bold uppercase tracking-[0.3em] mb-8 flex items-center gap-2">
-              <span className="h-px w-8 bg-green-500/30"></span> Network Intelligence
-            </h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
-              <InfoBlock label="IP Address" value={visitor.ip} isGreen />
-              <InfoBlock label="ISP / Organization" value={visitor.org} />
-              <InfoBlock label="Session ID" value={visitor.sessionId} />
-              <InfoBlock label="Traffic Source" value={visitor.utmSource} />
-              <InfoBlock label="Language" value={visitor.language} />
-              <InfoBlock label="Timezone" value={visitor.timezone} />
-            </div>
-          </section>
+      <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-6">
 
-          {/* System Fingerprint Card */}
-          <section className="bg-[#0f0f0f] border border-white/5 p-8 rounded-lg">
-            <h2 className="text-green-500 text-xs font-bold uppercase tracking-[0.3em] mb-8 flex items-center gap-2">
-              <span className="h-px w-8 bg-green-500/30"></span> System Fingerprint
-            </h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
-              <InfoBlock label="Browser" value={visitor.browserName} />
-              <InfoBlock label="Operating System" value={visitor.osName} />
-              <InfoBlock label="Screen Resolution" value={visitor.screenSize} />
-            </div>
-            <div className="pt-6 border-t border-white/5">
-              <p className="text-[10px] text-white/30 uppercase font-bold mb-3">User Agent String</p>
-              <code className="block bg-black p-4 rounded text-xs text-white/60 break-all leading-relaxed font-mono">
+        {/* LEFT */}
+        <div className="lg:col-span-8 space-y-6">
+
+          {/* NETWORK */}
+          <Card title="Network Information">
+            <Grid>
+              <Info label="IP Address" value={visitor.ip} type="ip" />
+              <Info label="Organization" value={visitor.org} />
+              <Info label="Session ID" value={visitor.sessionId} type="id" />
+              <Info label="Source" value={visitor.utmSource} type="highlight" />
+              <Info label="Language" value={visitor.language} />
+              <Info label="Timezone" value={visitor.timezone} />
+            </Grid>
+          </Card>
+
+          {/* SYSTEM */}
+          <Card title="System Details">
+            <Grid>
+              <Info label="Browser" value={visitor.browserName} type="highlight" />
+              <Info label="OS" value={visitor.osName} />
+              <Info label="Platform" value={visitor.platform} />
+              <Info label="Device" value={visitor.device} />
+              <Info label="Device Brand" value={visitor.deviceBrand} />
+              <Info label="Screen" value={visitor.screenSize} />
+            </Grid>
+
+            <div className="mt-4">
+              <p className="text-xs text-slate-400 mb-2">User Agent</p>
+              <div className="bg-black/40 p-3 rounded text-xs text-slate-300 break-all">
                 {visitor.userAgent}
-              </code>
-            </div>
-          </section>
-        </div>
-
-        {/* --- RIGHT COLUMN: GEOLOCATION & LOGS (4 COLS) --- */}
-        <aside className="lg:col-span-4 space-y-8">
-          
-          {/* Visual Geo-Targeting */}
-          <section className="bg-[#0f0f0f] border border-white/5 rounded-lg overflow-hidden">
-            <div className="h-64 relative grayscale hover:grayscale-0 transition-all duration-700 opacity-80 hover:opacity-100">
-              <iframe
-                title="Geographic Location"
-                width="100%"
-                height="100%"
-                frameBorder="0"
-                src={mapUrl}
-              ></iframe>
-              <div className="absolute top-2 right-2 bg-black/80 px-2 py-1 text-[10px] font-mono text-green-500 border border-green-500/20">
-                LOC: {visitor.loc}
               </div>
             </div>
-            <div className="p-6">
-               <div className="flex justify-between items-center mb-4">
-                  <span className="text-xs text-white/40 uppercase">Location Data</span>
-                  <span className="text-xs text-white font-bold">{visitor.country} / {visitor.postal}</span>
-               </div>
-               <p className="text-xl font-light text-green-500">
-                {visitor.city}, <span className="text-white">{visitor.region}</span>
-               </p>
-            </div>
-          </section>
+          </Card>
 
-          {/* Temporal Logs */}
-          <section className="bg-[#0f0f0f] border border-white/5 p-8 rounded-lg">
-            <h2 className="text-green-500 text-xs font-bold uppercase tracking-[0.3em] mb-6">Temporal Logs</h2>
-            <div className="space-y-6">
-              <LogItem label="First Detected" date={visitor.createdAt} />
-              <LogItem label="Last Activity" date={visitor.lastActivity} />
-              <LogItem label="Database Sync" date={visitor.updatedAt} />
-            </div>
-          </section>
-        </aside>
+          {/* EXTRA RAW DATA */}
+          <Card title="Additional Data">
+            <Grid>
+              <Info label="Platform" value={visitor.platform} />
+              <Info label="Version (__v)" value={visitor.__v} />
+            </Grid>
+          </Card>
+        </div>
 
+        {/* RIGHT */}
+        <div className="lg:col-span-4 space-y-6">
+
+          {/* LOCATION */}
+          <Card title="Location">
+            <div className="h-56 rounded-lg overflow-hidden mb-4 border border-white/10">
+              <iframe
+                title="map"
+                width="100%"
+                height="100%"
+                src={mapUrl}
+              />
+            </div>
+
+            <Info label="City" value={visitor.city} type="location" />
+            <Info label="Region" value={visitor.region} />
+            <Info label="Country" value={visitor.country} />
+            <Info label="Postal Code" value={visitor.postal} />
+            <Info label="Coordinates" value={visitor.loc} type="location" />
+          </Card>
+
+          {/* TIMELINE */}
+          <Card title="Activity Timeline">
+            <Timeline label="Created" date={visitor.createdAt} />
+            <Timeline label="Last Active" date={visitor.lastActivity} />
+            <Timeline label="Updated" date={visitor.updatedAt} />
+          </Card>
+        </div>
       </div>
     </div>
   );
 };
 
-/* --- HELPER COMPONENTS FOR CLEANER CODE --- */
+/* COMPONENTS */
 
-const InfoBlock = ({ label, value, isGreen = false }) => (
-  <div className="flex flex-col">
-    <span className="text-[10px] uppercase text-white/30 font-bold tracking-widest mb-1">{label}</span>
-    <span className={`text-sm truncate ${isGreen ? 'text-green-500 font-mono font-bold' : 'text-white/90'}`}>
-      {value || "Unknown"}
-    </span>
+const Card = ({ title, children }) => (
+  <div className="bg-gradient-to-br from-white/5 to-white/0 border border-white/10 rounded-xl p-5 backdrop-blur-xl shadow-lg hover:shadow-indigo-500/10 transition">
+    <h2 className="text-sm text-slate-400 mb-4 flex items-center gap-2">
+      <span className="w-2 h-2 rounded-full bg-indigo-400"></span>
+      {title}
+    </h2>
+    {children}
   </div>
 );
 
-const LogItem = ({ label, date }) => (
-  <div className="flex justify-between items-start border-l border-green-500/20 pl-4">
-    <div>
-      <p className="text-[10px] uppercase text-white/30 mb-1">{label}</p>
-      <p className="text-xs text-white/80 font-mono italic">
-        {new Date(date).toLocaleString()}
+const Grid = ({ children }) => (
+  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+    {children}
+  </div>
+);
+
+const Info = ({ label, value, type = "default" }) => {
+  const colorMap = {
+    ip: "text-green-400",
+    id: "text-red-400",
+    location: "text-yellow-400",
+    highlight: "text-indigo-400",
+    default: "text-white",
+  };
+
+  return (
+    <div className="group">
+      <p className="text-xs text-slate-400">{label}</p>
+      <p className={`text-sm font-medium ${colorMap[type]} group-hover:scale-[1.02] transition`}>
+        {value || "N/A"}
       </p>
     </div>
+  );
+};
+
+const Timeline = ({ label, date }) => (
+  <div className="flex justify-between items-center text-sm mb-3 p-2 rounded-lg hover:bg-white/5 transition">
+    <span className="text-slate-400">{label}</span>
+    <span className="text-indigo-400 font-medium">
+      {new Date(date).toLocaleString()}
+    </span>
   </div>
 );
 
