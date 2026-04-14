@@ -544,7 +544,7 @@ const HomePage = () => {
             <section className="py-20 px-6 max-w-[60rem] mx-auto">
                 <div className="flex flex-col items-center mb-10">
                     <h2 className="text-3xl font-bold text-white mb-2 tracking-tight uppercase font-mono">
-                        <span className="text-green-500">&gt;</span> System_Contribution
+                        <span className="text-green-500">&gt;</span> Contribution
                     </h2>
                     <div className="h-1 w-20 bg-green-500"></div>
                 </div>
