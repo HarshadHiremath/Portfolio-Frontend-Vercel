@@ -539,7 +539,6 @@ const HomePage = () => {
                 </div>
             </section> */}
 
-
             {/* Contribution Matrix */}
             <section className="py-20 px-6 max-w-[60rem] mx-auto">
                 <div className="flex flex-col items-center mb-10">
