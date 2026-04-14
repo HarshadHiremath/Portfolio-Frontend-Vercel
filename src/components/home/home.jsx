@@ -14,18 +14,20 @@ import "./index.css";
 import { useRef } from "react"; // NEW
 import { useNavigate } from "react-router-dom"; // NEW
 import {UAParser} from "ua-parser-js";
+import ContributionMatrix from "./ContributionMatrix";
 
 // Asset Imports
-import Banner0 from "../../assets/Banner0.png";
-import Banner1 from "../../assets/Banner1.jpg";
-import Banner2 from "../../assets/Banner2.jpg";
-import Banner3 from "../../assets/Banner3.jpg";
-import Banner4 from "../../assets/Banner4.jpg";
-import Banner5 from "../../assets/Banner5.jpg";
-import Banner6 from "../../assets/Banner6.jpg";
-import Banner7 from "../../assets/Banner7.jpg";
-import Banner8 from "../../assets/Banner8.jpg";
-import Banner9 from "../../assets/Banner9.jpg";
+// import Banner0 from "../../assets/Banner0.png";
+// import Banner1 from "../../assets/Banner1.jpg";
+// import Banner2 from "../../assets/Banner2.jpg";
+// import Banner3 from "../../assets/Banner3.jpg";
+// import Banner4 from "../../assets/Banner4.jpg";
+// import Banner5 from "../../assets/Banner5.jpg";
+// import Banner6 from "../../assets/Banner6.jpg";
+// import Banner7 from "../../assets/Banner7.jpg";
+// import Banner8 from "../../assets/Banner8.jpg";
+// import Banner9 from "../../assets/Banner9.jpg";
+
 import Profile from "../../assets/Profile.png";
 
 // --- Sub-Component: MetricItem for Visitor ---
@@ -117,18 +119,18 @@ const HomePage = () => {
         }
     };
 
-    const slides = [
-        { image: Banner0, alt: "Project 0" },
-        { image: Banner1, alt: "Project 1" },
-        { image: Banner2, alt: "Project 2" },
-        { image: Banner3, alt: "Project 3" },
-        { image: Banner4, alt: "Project 4" },
-        { image: Banner5, alt: "Project 5" },
-        { image: Banner6, alt: "Project 6" },
-        { image: Banner7, alt: "Project 7" },
-        { image: Banner8, alt: "Project 8" },
-        { image: Banner9, alt: "Project 9" },
-    ];
+    // const slides = [
+    //     { image: Banner0, alt: "Project 0" },
+    //     { image: Banner1, alt: "Project 1" },
+    //     { image: Banner2, alt: "Project 2" },
+    //     { image: Banner3, alt: "Project 3" },
+    //     { image: Banner4, alt: "Project 4" },
+    //     { image: Banner5, alt: "Project 5" },
+    //     { image: Banner6, alt: "Project 6" },
+    //     { image: Banner7, alt: "Project 7" },
+    //     { image: Banner8, alt: "Project 8" },
+    //     { image: Banner9, alt: "Project 9" },
+    // ];
 
     const [journeyStats, setJourneyStats] = useState([]);
     const [notices, setNotices] = useState([]);
@@ -271,12 +273,12 @@ const HomePage = () => {
         fetchData();
     }, []);
 
-    useEffect(() => {
-        const interval = setInterval(() => {
-            setCurrentSlide((prev) => (prev + 1) % slides.length);
-        }, 4000);
-        return () => clearInterval(interval);
-    }, [slides.length]);
+    // useEffect(() => {
+    //     const interval = setInterval(() => {
+    //         setCurrentSlide((prev) => (prev + 1) % slides.length);
+    //     }, 4000);
+    //     return () => clearInterval(interval);
+    // }, [slides.length]);
 
     if (loading)
         return (
@@ -514,7 +516,7 @@ const HomePage = () => {
                 </div>
             </section>
 
-            {/* 3. PROJECT GALLERY */}
+            {/* 3. PROJECT GALLERY
             <section className="py-20 px-6 max-w-7xl mx-auto">
                 <div className="flex flex-col items-center mb-10">
                     <h2 className="text-3xl font-bold text-white mb-2 tracking-tight">
@@ -535,7 +537,22 @@ const HomePage = () => {
                         />
                     </AnimatePresence>
                 </div>
+            </section> */}
+
+
+            {/* Contribution Matrix */}
+            <section className="py-20 px-6 max-w-[60rem] mx-auto">
+                <div className="flex flex-col items-center mb-10">
+                    <h2 className="text-3xl font-bold text-white mb-2 tracking-tight uppercase font-mono">
+                        <span className="text-green-500">&gt;</span> System_Contribution
+                    </h2>
+                    <div className="h-1 w-20 bg-green-500"></div>
+                </div>
+                
+                <ContributionMatrix />
             </section>
+
+
 
             {/* 4. SYSTEM TRAFFIC MONITOR */}
             <section className="pb-15 px-10 relative overflow-hidden">
@@ -642,62 +659,3 @@ const HomePage = () => {
 };
 
 export default HomePage;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-// const trackVisitor = async () => {
-//         try {
-//             let sessionId = localStorage.getItem("sessionId");
-
-//             if (!sessionId) {
-//                 sessionId = crypto.randomUUID();
-//                 localStorage.setItem("sessionId", sessionId);
-//             }
-
-//             const params = new URLSearchParams(window.location.search);
-
-//             const utmSource =
-//                 params.get("utm_source") || params.get("src") || "direct";
-
-//             const data = {
-//                 sessionId,
-//                 screenSize: `${window.screen.width}x${window.screen.height}`,
-//                 utmSource,
-//                 language: navigator.language,
-//             };
-
-//             const res = await fetch(
-//                 `${import.meta.env.VITE_LOCALHOST}/api/home/visitors/track`,
-//                 {
-//                     method: "POST",
-//                     headers: {
-//                         "Content-Type": "application/json",
-//                     },
-//                     body: JSON.stringify(data),
-//                 },
-//             );
-
-//             const result = await res.json();
-
-//             if (result?.new && result?.sessionId) {
-//                 localStorage.setItem("sessionId", result.sessionId);
-//             }
-//         } catch (error) {
-//             console.log("Visitor Tracking Error:", error);
-//         }
-//     };
